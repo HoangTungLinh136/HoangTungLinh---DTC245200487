@@ -133,7 +133,7 @@ docker compose down
 ## 6. HƯỚNG DẪN SỬ DỤNG CHI TIẾT
 
 ### A. Dành Cho Sinh Viên (Student)
-1. Truy cập [http://localhost](http://localhost), đăng nhập bằng tài khoản `student1` / `Password123!`.
+1. Truy cập [http://localhost](http://localhost), đăng nhập bằng tài khoản `student1` / `Hoanglinh1#`.
 2. Danh sách bài thi hiện có hiển thị các đề Public và đề Assigned được chỉ định cho bạn.
 3. Bấm **Bắt đầu làm bài**. Giao diện bài thi hiển thị:
    - Đồng hồ đếm ngược thời gian làm bài (tính toán chuẩn xác theo server).
