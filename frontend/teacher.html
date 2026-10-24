@@ -452,10 +452,11 @@
   <div class="modal-overlay" id="exam-modal">
     <div class="modal-box-card" style="max-width: 740px;">
       <div class="modal-box-header">
-        <h3>Tạo Đề Thi Mới</h3>
+        <h3 id="exam-modal-title">Tạo Đề Thi Mới</h3>
         <button class="btn-modal-close" onclick="closeExamModal()" title="Đóng">×</button>
       </div>
       <form onsubmit="handleSaveExam(event)">
+        <input type="hidden" id="edit-exam-id">
         <div class="form-group">
           <label class="form-label" for="exam-title-input">Tên đề thi</label>
           <input type="text" id="exam-title-input" class="form-control" required placeholder="Ví dụ: Kiểm tra giữa kỳ Mạng Máy Tính">
@@ -480,10 +481,21 @@
         </div>
         <div class="form-group">
           <label class="form-label" for="exam-access-type">Hình thức tổ chức</label>
-          <select id="exam-access-type" class="form-control">
+          <select id="exam-access-type" class="form-control" onchange="handleExamAccessTypeChange(this.value)">
             <option value="public">Tự do (Tất cả sinh viên có thể thi)</option>
             <option value="assigned">Chỉ định (Chỉ sinh viên được gán)</option>
           </select>
+        </div>
+
+        <!-- BD-10 Assigned Students Picker -->
+        <div class="form-group" id="exam-assigned-students-group" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+            <label class="form-label" style="margin-bottom: 0;">Danh sách sinh viên được gán bài thi (BD-10):</label>
+            <button type="button" class="btn-refresh-sm" onclick="loadStudentsForAssignment()">Làm mới danh sách</button>
+          </div>
+          <div id="exam-assigned-students-picker" style="max-height: 160px; overflow-y: auto; border: 1px solid var(--teacher-border); border-radius: var(--teacher-radius-sm); padding: 0.5rem; background-color: #F8FAFC;">
+            <p style="color: var(--teacher-text-muted); font-size: 0.85rem;">Đang tải danh sách sinh viên...</p>
+          </div>
         </div>
 
         <!-- Question picker / File upload tabs -->
@@ -1183,8 +1195,9 @@
             <td style="text-align: center;">
               <input type="checkbox" ${e.is_published_answers ? 'checked' : ''} onchange="togglePub(${e.id}, null, this.checked)" title="Công bố đáp án chi tiết cho sinh viên">
             </td>
-            <td style="text-align: center;">
-              <button class="btn-action-clone" onclick="cloneExam(${e.id})">Nhân bản (Clone)</button>
+            <td style="text-align: center; white-space: nowrap;">
+              <button class="btn-action-clone" style="background: #F1F5F9; color: #334155; border-color: #CBD5E1; margin-right: 0.35rem;" onclick="openEditExamModal(${e.id})" title="Chỉnh sửa đề thi (BD-03)">Sửa</button>
+              <button class="btn-action-clone" onclick="cloneExam(${e.id})" title="Nhân bản đề thi (BD-03)">Nhân bản</button>
             </td>
           </tr>
         `;
@@ -1319,12 +1332,57 @@
       if (box) box.style.display = 'none';
     }
 
+    function handleExamAccessTypeChange(val) {
+      const group = document.getElementById('exam-assigned-students-group');
+      if (val === 'assigned') {
+        if (group) group.style.display = 'block';
+        loadStudentsForAssignment();
+      } else {
+        if (group) group.style.display = 'none';
+      }
+    }
+
+    async function loadStudentsForAssignment(selectedIds = []) {
+      const picker = document.getElementById('exam-assigned-students-picker');
+      if (!picker) return;
+      picker.innerHTML = '<p style="color: var(--teacher-text-muted); font-size: 0.85rem;">Đang tải danh sách sinh viên...</p>';
+      try {
+        const res = await API.get('/exams/students-list');
+        const students = res.students || [];
+        if (students.length === 0) {
+          picker.innerHTML = '<p style="color: var(--teacher-text-muted); font-size: 0.85rem;">Không có sinh viên khả dụng.</p>';
+          return;
+        }
+        picker.innerHTML = students.map(s => `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.35rem 0.4rem; border-bottom: 1px solid var(--teacher-border);">
+            <label style="display: flex; gap: 0.45rem; align-items: center; font-size: 0.85rem; cursor: pointer;">
+              <input type="checkbox" class="exam-student-select" value="${s.id}" ${selectedIds.includes(s.id) ? 'checked' : ''}>
+              <strong style="color: var(--teacher-navy);">${escapeHtml(s.full_name || s.username)}</strong>
+              <span style="color: var(--teacher-text-muted); font-size: 0.78rem;">(@${escapeHtml(s.username)} - ${escapeHtml(s.email)})</span>
+            </label>
+          </div>
+        `).join('');
+      } catch (err) {
+        picker.innerHTML = `<p style="color: var(--teacher-danger); font-size: 0.85rem;">Lỗi tải sinh viên: ${escapeHtml(err.message)}</p>`;
+      }
+    }
+
     function openCreateExamModal() {
+      document.getElementById('edit-exam-id').value = '';
+      document.getElementById('exam-modal-title').textContent = 'Tạo Đề Thi Mới';
       document.getElementById('exam-title-input').value = '';
       document.getElementById('exam-desc-input').value = '';
       document.getElementById('exam-duration-input').value = 30;
       document.getElementById('exam-max-attempts').value = 1;
       document.getElementById('exam-pass-score').value = 5.0;
+      document.getElementById('exam-access-type').value = 'public';
+      handleExamAccessTypeChange('public');
+
+      // Show question picker sections
+      const qSourceTabs = document.querySelector('.exam-q-source-tabs');
+      if (qSourceTabs && qSourceTabs.parentElement) {
+        qSourceTabs.parentElement.style.display = 'block';
+      }
 
       // Reset file import state
       resetExamFileImport();
@@ -1354,7 +1412,44 @@
         `).join('');
       }
 
+      const submitBtn = document.getElementById('btn-submit-exam');
+      if (submitBtn) submitBtn.innerHTML = '<span>Tạo Đề Thi</span>';
+
       document.getElementById('exam-modal').classList.add('open');
+    }
+
+    async function openEditExamModal(examId) {
+      try {
+        const res = await API.get(`/exams/${examId}`);
+        const exam = res.exam;
+        if (exam.hasAttempts) {
+          alert(`[BD-03 BẢO TOÀN LỊCH SỬ THI]\nĐề thi #${exam.id} ("${exam.title}") đã có bài làm của sinh viên nên cấu trúc đánh giá bị khóa vĩnh viễn.\n\nTheo chính sách BD-03, để thay đổi đề thi này, bạn vui lòng bấm "Nhân bản (Clone)" để tạo một bản sao mới và chỉnh sửa.`);
+          return;
+        }
+
+        document.getElementById('edit-exam-id').value = exam.id;
+        document.getElementById('exam-modal-title').textContent = `Chỉnh Sửa Đề Thi #${exam.id}`;
+        document.getElementById('exam-title-input').value = exam.title;
+        document.getElementById('exam-desc-input').value = exam.description || '';
+        document.getElementById('exam-duration-input').value = exam.duration_minutes;
+        document.getElementById('exam-max-attempts').value = exam.max_attempts;
+        document.getElementById('exam-pass-score').value = exam.pass_score;
+        document.getElementById('exam-access-type').value = exam.access_type;
+        handleExamAccessTypeChange(exam.access_type);
+
+        // Hide question picker section during metadata update
+        const qSourceTabs = document.querySelector('.exam-q-source-tabs');
+        if (qSourceTabs && qSourceTabs.parentElement) {
+          qSourceTabs.parentElement.style.display = 'none';
+        }
+
+        const submitBtn = document.getElementById('btn-submit-exam');
+        if (submitBtn) submitBtn.innerHTML = '<span>Lưu Thay Đổi</span>';
+
+        document.getElementById('exam-modal').classList.add('open');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
     }
 
     function closeExamModal() {
@@ -1363,6 +1458,7 @@
 
     async function handleSaveExam(e) {
       e.preventDefault();
+      const editId = document.getElementById('edit-exam-id').value;
       const title = document.getElementById('exam-title-input').value.trim();
       const description = document.getElementById('exam-desc-input').value.trim();
       const duration_minutes = parseInt(document.getElementById('exam-duration-input').value, 10);
@@ -1370,7 +1466,44 @@
       const pass_score = parseFloat(document.getElementById('exam-pass-score').value);
       const access_type = document.getElementById('exam-access-type').value;
 
+      const submitBtn = document.getElementById('btn-submit-exam');
+
+      // Edit Mode (PUT /exams/:id)
+      if (editId) {
+        try {
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span>Đang lưu thay đổi...</span>';
+          }
+          await API.put(`/exams/${editId}`, {
+            title, description, duration_minutes, max_attempts, pass_score, access_type
+          });
+          showToast('Cập nhật đề thi thành công!', 'success');
+          closeExamModal();
+          await loadExams();
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span>Lưu Thay Đổi</span>';
+          }
+        }
+        return;
+      }
+
+      // Create Mode (POST /exams)
       const questions = [];
+      const assigned_student_ids = [];
+
+      if (access_type === 'assigned') {
+        const studentCheckboxes = document.querySelectorAll('.exam-student-select:checked');
+        if (studentCheckboxes.length === 0) {
+          showToast('Vui lòng chọn ít nhất một sinh viên cho đề thi chỉ định (BD-10)', 'error');
+          return;
+        }
+        studentCheckboxes.forEach(cb => assigned_student_ids.push(parseInt(cb.value, 10)));
+      }
 
       // Check if user is using file upload mode
       if (examQSource === 'file' && examParsedQuestions.length > 0) {
@@ -1380,7 +1513,6 @@
           return;
         }
 
-        const submitBtn = document.getElementById('btn-submit-exam');
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span>Đang nhập câu hỏi & tạo đề...</span>';
 
@@ -1429,7 +1561,7 @@
 
       try {
         await API.post('/exams', {
-          title, description, duration_minutes, max_attempts, pass_score, access_type, questions
+          title, description, duration_minutes, max_attempts, pass_score, access_type, questions, assigned_student_ids
         });
         showToast('Tạo đề thi mới thành công!', 'success');
         closeExamModal();
@@ -1438,7 +1570,6 @@
       } catch (err) {
         showToast(err.message, 'error');
       } finally {
-        const submitBtn = document.getElementById('btn-submit-exam');
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.innerHTML = '<span>Tạo Đề Thi</span>';

@@ -116,7 +116,7 @@ async function claimGradingJob(attemptId, workerId = 'worker-1', leaseSeconds = 
  * @param {number} maxRawScore 
  * @param {number} normalizedScore 
  */
-async function completeGradingJob(attemptId, workerFencingToken, totalRawScore, maxRawScore, normalizedScore) {
+async function completeGradingJob(attemptId, workerFencingToken, totalRawScore, maxRawScore, normalizedScore, answersToSave = []) {
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
@@ -157,6 +157,21 @@ async function completeGradingJob(attemptId, workerFencingToken, totalRawScore, 
     if (attempt.grading_status !== 'grading') {
       await connection.rollback();
       return { committed: false, reason: 'INVALID_STATUS', status: attempt.grading_status };
+    }
+
+    // ATOMIC PERSISTENCE: Write evaluated answers within the SAME transaction guarded by fencing token
+    if (Array.isArray(answersToSave) && answersToSave.length > 0) {
+      for (const ans of answersToSave) {
+        await connection.execute(
+          `INSERT INTO attempt_answers (attempt_id, question_id, selected_choice_ids, is_correct, score_awarded)
+           VALUES (?, ?, ?, ?, ?)
+           ON DUPLICATE KEY UPDATE 
+             selected_choice_ids = COALESCE(attempt_answers.selected_choice_ids, VALUES(selected_choice_ids)),
+             is_correct = VALUES(is_correct),
+             score_awarded = VALUES(score_awarded)`,
+          [attemptId, ans.question_id, ans.choiceIdsJson, ans.isCorrect, ans.awardedScore]
+        );
+      }
     }
 
     const finalStatus = attempt.status === 'in_progress' ? 'completed' : attempt.status;
@@ -212,10 +227,11 @@ async function gradeAttempt(attemptId, triggeredBy = 'submit') {
     return { success: false, message: claim.reason, attemptId };
   }
 
-  // Phase 2: Compute score against immutable snapshots
+  // Phase 2: Compute score in-memory against immutable snapshots
   const connection = await db.getConnection();
   let totalRawScore = 0;
   let maxRawScore = 0;
+  const answersToSave = [];
 
   try {
     const [snapshots] = await connection.execute(
@@ -269,15 +285,12 @@ async function gradeAttempt(attemptId, triggeredBy = 'submit') {
 
       const choiceIdsJson = studentChoiceIds.length > 0 ? JSON.stringify(studentChoiceIds) : '[]';
 
-      await connection.execute(
-        `INSERT INTO attempt_answers (attempt_id, question_id, selected_choice_ids, is_correct, score_awarded)
-         VALUES (?, ?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE 
-           selected_choice_ids = COALESCE(attempt_answers.selected_choice_ids, VALUES(selected_choice_ids)),
-           is_correct = VALUES(is_correct),
-           score_awarded = VALUES(score_awarded)`,
-        [attemptId, snap.question_id, choiceIdsJson, isCorrect ? 1 : 0, awardedScore]
-      );
+      answersToSave.push({
+        question_id: snap.question_id,
+        choiceIdsJson,
+        isCorrect: isCorrect ? 1 : 0,
+        awardedScore
+      });
     }
   } finally {
     connection.release();
@@ -285,8 +298,8 @@ async function gradeAttempt(attemptId, triggeredBy = 'submit') {
 
   const normalizedScore = calculateNormalizedScore(totalRawScore, maxRawScore);
 
-  // Phase 3: Complete grading job with fencing token
-  const completion = await completeGradingJob(attemptId, claim.fencingToken, totalRawScore, maxRawScore, normalizedScore);
+  // Phase 3: Atomically complete grading job AND persist answers within fencing-guarded transaction
+  const completion = await completeGradingJob(attemptId, claim.fencingToken, totalRawScore, maxRawScore, normalizedScore, answersToSave);
   if (!completion.committed) {
     return { success: false, message: completion.reason, attemptId };
   }

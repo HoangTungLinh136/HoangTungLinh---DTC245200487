@@ -2,6 +2,7 @@ const attemptRepo = require('../repositories/attemptRepository');
 const sessionRepo = require('../repositories/sessionRepository');
 const passwordResetRepo = require('../repositories/passwordResetRepository');
 const { gradeAttempt } = require('./scoringService');
+const { enqueueAttemptOperation } = require('../controllers/attemptController');
 
 /**
  * Scan and finalize all in_progress attempts whose deadline has passed (BD-07, C-FIN)
@@ -17,11 +18,13 @@ async function processExpiredAttempts() {
 
     for (const att of expiredAttempts) {
       try {
-        const finalized = await attemptRepo.updateStatus(att.id, 'expired');
-        if (finalized) {
-          await gradeAttempt(att.id, 'expiry_worker');
-          console.log(`[FinalizationService] Auto-finalized attempt ${att.id}`);
-        }
+        await enqueueAttemptOperation(att.id, async () => {
+          const finalized = await attemptRepo.updateStatus(att.id, 'expired');
+          if (finalized) {
+            await gradeAttempt(att.id, 'expiry_worker');
+            console.log(`[FinalizationService] Auto-finalized attempt ${att.id}`);
+          }
+        });
       } catch (err) {
         console.error(`[FinalizationService] Failed to finalize attempt ${att.id}:`, err.message);
       }

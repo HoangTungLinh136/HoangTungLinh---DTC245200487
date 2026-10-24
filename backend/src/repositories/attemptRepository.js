@@ -118,14 +118,38 @@ class AttemptRepository {
     return rows[0] || null;
   }
 
-  async updateStatus(attemptId, status, submittedAt = null, connection = null) {
+  async updateStatus(attemptId, status, submittedAt = null, connection = null, allowedPreviousStatuses = ['in_progress']) {
     const client = connection || db;
+    const placeholders = allowedPreviousStatuses.map(() => '?').join(', ');
     const [result] = await client.execute(
       `UPDATE exam_attempts
        SET status = ?,
            submitted_at = COALESCE(?, CURRENT_TIMESTAMP)
-       WHERE id = ? AND status = 'in_progress'`,
-      [status, submittedAt, attemptId]
+       WHERE id = ? AND status IN (${placeholders})`,
+      [status, submittedAt, attemptId, ...allowedPreviousStatuses]
+    );
+    return result.affectedRows > 0;
+  }
+
+  /**
+   * ARC-R2 Atomic Reconciliation for on-time submission arriving after Finalizer scanned
+   * Invalidates any active/previous grading workers by advancing fencing token,
+   * clears stale scores and grading lease, and sets status to 'completed' with grading_status = 'ungraded'.
+   */
+  async reconcileExpiredAttempt(attemptId, serverReceivedAt = null, connection = null) {
+    const client = connection || db;
+    const [result] = await client.execute(
+      `UPDATE exam_attempts
+       SET status = 'completed',
+           submitted_at = COALESCE(?, CURRENT_TIMESTAMP),
+           grading_status = 'ungraded',
+           raw_score = NULL,
+           score = NULL,
+           grading_fencing_token = COALESCE(grading_fencing_token, 0) + 1,
+           grading_lease_expires_at = NULL,
+           grading_retry_count = 0
+       WHERE id = ? AND status = 'expired'`,
+      [serverReceivedAt, attemptId]
     );
     return result.affectedRows > 0;
   }

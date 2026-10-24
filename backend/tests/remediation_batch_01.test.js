@@ -5,6 +5,7 @@ const path = require('node:path');
 
 // Ensure DB_PORT and NODE_ENV are configured for tests
 process.env.NODE_ENV = 'test';
+process.env.DB_HOST = process.env.DB_HOST || '127.0.0.1';
 process.env.DB_PORT = process.env.DB_PORT || '3307';
 process.env.DB_PASSWORD = process.env.DB_PASSWORD || 'QuizPass123!';
 const app = require('../src/server');

@@ -240,8 +240,9 @@ const attemptQueues = new Map();
 // Test-only dependency injection hook (never exposed via HTTP headers)
 let testConnectionDelayHook = null;
 
-function enqueueAttemptOperation(attemptId, task) {
+function enqueueAttemptOperation(attemptId, task, timeoutMs = 15000) {
   const previousTail = attemptQueues.get(attemptId) || Promise.resolve();
+  const abortController = new AbortController();
 
   let resolveResult, rejectResult;
   const resultPromise = new Promise((resolve, reject) => {
@@ -249,12 +250,39 @@ function enqueueAttemptOperation(attemptId, task) {
     rejectResult = reject;
   });
 
+  let actualTaskPromise = null;
+
   const executionPromise = previousTail.then(async () => {
+    let timer = null;
     try {
-      const res = await task();
+      const timeoutPromise = new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          abortController.abort(new Error(`Operation timed out after ${timeoutMs}ms in ingress queue`));
+          reject(new Error(`Operation timed out after ${timeoutMs}ms in ingress queue`));
+        }, timeoutMs);
+        if (timer.unref) timer.unref();
+      });
+
+      actualTaskPromise = Promise.resolve().then(() => task(abortController.signal));
+
+      const res = await Promise.race([actualTaskPromise, timeoutPromise]);
+      if (timer) clearTimeout(timer);
       resolveResult(res);
     } catch (err) {
+      if (timer) clearTimeout(timer);
       rejectResult(err);
+    } finally {
+      // ARC-R1 Serialization Hardening:
+      // Even if Promise.race timed out or errored, queueTail MUST wait for actualTaskPromise
+      // to completely settle (finish rollback and release DB connection).
+      // Task B MUST NEVER execute MySQL writes for the same attempt while Task A can still write.
+      if (actualTaskPromise) {
+        try {
+          await actualTaskPromise;
+        } catch (_) {
+          // Swallow background task failure as caller already received rejectResult
+        }
+      }
     }
   });
 
@@ -288,7 +316,10 @@ async function saveDraft(req, res) {
     return res.status(400).json({ error: 'Invalid attempt ID' });
   }
 
-  return enqueueAttemptOperation(attemptId, async () => {
+  // Authoritative server arrival timestamp (ARC-R2)
+  const serverReceivedAt = new Date();
+
+  return enqueueAttemptOperation(attemptId, async (abortSignal) => {
     // Test-only dependency injection hook (never reads client HTTP headers)
     if (typeof testConnectionDelayHook === 'function') {
       await testConnectionDelayHook(attemptId, req);
@@ -335,16 +366,25 @@ async function saveDraft(req, res) {
         return res.status(404).json({ error: 'Attempt not found or unauthorized' });
       }
 
-      // SAVE/SUBMIT Ordering check: If attempt is no longer in_progress, reject with 409
+      // ARC-R2 SAVE/SUBMIT Ordering & Reconcile Check:
+      // If attempt is no longer in_progress:
       if (attempt.status !== 'in_progress') {
-        await connection.rollback().catch(() => {});
-        return res.status(409).json({ error: `Cannot save answers. Attempt status is '${attempt.status}'` });
-      }
-
-      const now = new Date();
-      if (new Date(attempt.deadline_at) < now) {
-        await connection.rollback().catch(() => {});
-        return res.status(400).json({ error: 'Exam deadline has passed. Answers cannot be saved.' });
+        // If expired but request arrived at server before deadline, allow saving draft
+        if (attempt.status === 'expired' && serverReceivedAt <= new Date(attempt.deadline_at)) {
+          // Allow draft save for on-time request despite finalizer running ahead
+        } else {
+          await connection.rollback().catch(() => {});
+          if (attempt.status === 'expired') {
+            return res.status(400).json({ error: 'Exam deadline has passed. Answers cannot be saved.' });
+          }
+          return res.status(409).json({ error: `Cannot save answers. Attempt status is '${attempt.status}'` });
+        }
+      } else {
+        // Authoritative deadline check: compare server arrival timestamp against attempt deadline
+        if (new Date(attempt.deadline_at) < serverReceivedAt) {
+          await connection.rollback().catch(() => {});
+          return res.status(400).json({ error: 'Exam deadline has passed. Answers cannot be saved.' });
+        }
       }
 
       // Validate that all question_ids belong to this attempt's snapshot (R8-D10 Batch conflict check)
@@ -399,6 +439,12 @@ async function saveDraft(req, res) {
         throw recErr;
       }
 
+      // ARC-R1: Abort check before commit
+      if (abortSignal && abortSignal.aborted) {
+        await connection.rollback().catch(() => {});
+        throw new Error('Operation aborted due to timeout in ingress queue');
+      }
+
       await connection.commit();
       return res.json(responsePayload);
     } catch (error) {
@@ -441,7 +487,15 @@ async function submitAttempt(req, res) {
     return res.status(400).json({ error: 'Invalid attempt ID' });
   }
 
-  return enqueueAttemptOperation(attemptId, async () => {
+  // Authoritative server arrival timestamp (ARC-R2)
+  const serverReceivedAt = new Date();
+
+  return enqueueAttemptOperation(attemptId, async (abortSignal) => {
+    // Test-only dependency injection hook (never reads client HTTP headers)
+    if (typeof testConnectionDelayHook === 'function') {
+      await testConnectionDelayHook(attemptId, req);
+    }
+
     let connection = null;
     const studentId = req.user.id;
     const { answers } = req.body || {};
@@ -479,14 +533,32 @@ async function submitAttempt(req, res) {
         return res.status(404).json({ error: 'Attempt not found or unauthorized' });
       }
 
-      // SAVE/SUBMIT Ordering: If already completed or expired, return 409 Conflict
+      let isReconciledFromExpired = false;
+
+      // SAVE/SUBMIT Ordering & ARC-R2 Reconciliation
       if (attempt.status !== 'in_progress') {
-        await connection.rollback().catch(() => {});
-        return res.status(409).json({
-          error: 'Attempt has already been finalized',
-          status: attempt.status,
-          attemptId
-        });
+        const isArrivedBeforeDeadline = (serverReceivedAt <= new Date(attempt.deadline_at));
+
+        if (attempt.status === 'expired' && isArrivedBeforeDeadline) {
+          // ARC-R2: Request arrived at Backend BEFORE deadline, but Finalizer worker
+          // scanned and updated status to 'expired' while this request was waiting in queue.
+          // According to business policy, on-time submission MUST be accepted and NOT misclassified as expired.
+          isReconciledFromExpired = true;
+        } else {
+          await connection.rollback().catch(() => {});
+          if (attempt.status === 'expired') {
+            return res.status(409).json({
+              error: 'Exam deadline has passed. Attempt was already finalized as expired.',
+              status: 'expired',
+              attemptId
+            });
+          }
+          return res.status(409).json({
+            error: 'Attempt has already been finalized',
+            status: attempt.status,
+            attemptId
+          });
+        }
       }
 
       // Validate and save final batch if provided
@@ -508,16 +580,24 @@ async function submitAttempt(req, res) {
         }
       }
 
-      const now = new Date();
-      const finalStatus = (now > new Date(attempt.deadline_at)) ? 'expired' : 'completed';
+      // Authoritative deadline check: compare server arrival timestamp against attempt deadline
+      const finalStatus = (serverReceivedAt > new Date(attempt.deadline_at)) ? 'expired' : 'completed';
 
-      await attemptRepo.updateStatus(attemptId, finalStatus, now, connection);
+      // Update status: if reconciled, atomically advance fencing token, clear old scores and lease
+      if (isReconciledFromExpired) {
+        await attemptRepo.reconcileExpiredAttempt(attemptId, serverReceivedAt, connection);
+      } else {
+        await attemptRepo.updateStatus(attemptId, finalStatus, serverReceivedAt, connection, ['in_progress']);
+      }
 
       const responsePayload = {
         message: 'Exam submitted successfully',
         attemptId,
         status: finalStatus
       };
+      if (isReconciledFromExpired) {
+        responsePayload.reconciled = true;
+      }
 
       try {
         await receiptRepo.recordReceipt({
@@ -547,12 +627,22 @@ async function submitAttempt(req, res) {
         throw recErr;
       }
 
+      // ARC-R1: Abort check before commit
+      if (abortSignal && abortSignal.aborted) {
+        await connection.rollback().catch(() => {});
+        throw new Error('Operation aborted due to timeout in ingress queue');
+      }
+
       await connection.commit();
 
-      // Trigger grading
-      const gradeResult = await gradeAttempt(attemptId, 'submit');
+      // Trigger grading: if reconciled, claimGradingJob will successfully claim because grading_status was reset to 'ungraded'
+      const gradeResult = await gradeAttempt(attemptId, isReconciledFromExpired ? 'submit_reconciled' : 'submit');
 
-      await auditRepo.log(studentId, 'SUBMIT_ATTEMPT', 'ATTEMPT', attemptId, { finalStatus, gradeResult }, req.ip);
+      await auditRepo.log(studentId, 'SUBMIT_ATTEMPT', 'ATTEMPT', attemptId, {
+        finalStatus,
+        reconciledFromExpired: isReconciledFromExpired,
+        gradeResult
+      }, req.ip);
 
       return res.json(responsePayload);
     } catch (error) {

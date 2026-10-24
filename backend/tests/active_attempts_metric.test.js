@@ -1,7 +1,10 @@
 const test = require('node:test');
 const assert = require('node:assert');
 
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
+process.env.DB_HOST = process.env.DB_HOST || '127.0.0.1';
 process.env.DB_PORT = process.env.DB_PORT || '3307';
+process.env.DB_PASSWORD = process.env.DB_PASSWORD || 'QuizPass123!';
 const db = require('../src/config/db');
 const attemptRepo = require('../src/repositories/attemptRepository');
 const { register, activeAttemptsGauge } = require('../src/config/metrics');

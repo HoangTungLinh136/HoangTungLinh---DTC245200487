@@ -3,7 +3,7 @@ services:
   mysql:
     image: mysql:8.0
     container_name: quizsystem-mysql
-    restart: unless-stopped
+    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-quizsystem}
@@ -31,12 +31,12 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: quizsystem-backend
-    restart: unless-stopped
+    restart: always
     environment:
       PORT: 3000
       NODE_ENV: production
-      DB_HOST: ${DB_HOST:-mysql}
-      DB_PORT: ${DB_PORT:-3306}
+      DB_HOST: mysql
+      DB_PORT: 3306
       DB_USER: ${DB_USER:-quiz_user}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME:-quizsystem}
@@ -44,8 +44,6 @@ services:
       SMTP_PORT: 1025
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost,http://127.0.0.1}
-    ports:
-      - "3000:3000"
     volumes:
       - ./backend/src:/app/src
     depends_on:
@@ -58,7 +56,7 @@ services:
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: quizsystem-phpmyadmin
-    restart: unless-stopped
+    restart: always
     environment:
       PMA_HOST: mysql
       PMA_PORT: 3306
@@ -77,7 +75,7 @@ services:
   nginx:
     image: nginx:alpine
     container_name: quizsystem-nginx
-    restart: unless-stopped
+    restart: always
     ports:
       - "80:80"
     volumes:
@@ -93,7 +91,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     container_name: quizsystem-prometheus
-    restart: unless-stopped
+    restart: always
     ports:
       - "9090:9090"
     volumes:
@@ -111,7 +109,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     container_name: quizsystem-grafana
-    restart: unless-stopped
+    restart: always
     ports:
       - "3001:3000"
     environment:
@@ -133,7 +131,7 @@ services:
   loki:
     image: grafana/loki:2.9.2
     container_name: quizsystem-loki
-    restart: unless-stopped
+    restart: always
     ports:
       - "3100:3100"
     volumes:
@@ -147,7 +145,7 @@ services:
   promtail:
     image: grafana/promtail:2.9.2
     container_name: quizsystem-promtail
-    restart: unless-stopped
+    restart: always
     ports:
       - "9080:9080"
     volumes:
@@ -164,7 +162,7 @@ services:
   mailpit:
     image: axllent/mailpit:latest
     container_name: quizsystem-mailpit
-    restart: unless-stopped
+    restart: always
     ports:
       - "1025:1025" # SMTP port
       - "8025:8025" # Web UI port

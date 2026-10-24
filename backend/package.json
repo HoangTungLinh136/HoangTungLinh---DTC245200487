@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node --test tests/*.test.js"
+    "test": "node --test --test-concurrency=1 tests/*.test.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -16,7 +16,7 @@
     "express": "^4.19.2",
     "express-rate-limit": "^8.7.1",
     "mysql2": "^3.9.7",
-    "nodemailer": "^6.9.13",
+    "nodemailer": "^10.2.1",
     "prom-client": "^15.1.2"
   }
 }

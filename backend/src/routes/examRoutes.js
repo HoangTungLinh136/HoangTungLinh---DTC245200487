@@ -8,6 +8,7 @@ const { requireRole } = require('../middleware/rbac');
 router.use(authenticate, requireRole(['teacher']));
 
 router.get('/', examController.listTeacherExams);
+router.get('/students-list', examController.listStudentsForAssignment);
 router.get('/:id', examController.getExamDetails);
 router.post('/', examController.createExam);
 router.put('/:id', examController.updateExam);

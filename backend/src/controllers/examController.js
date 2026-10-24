@@ -226,6 +226,19 @@ async function getExamResults(req, res) {
   }
 }
 
+/**
+ * List active students for exam assignment
+ */
+async function listStudentsForAssignment(req, res) {
+  try {
+    const students = await examRepo.listActiveStudents();
+    return res.json({ students });
+  } catch (error) {
+    console.error('[ExamController.listStudentsForAssignment] Error:', error.message);
+    return res.status(500).json({ error: 'Failed to retrieve student list' });
+  }
+}
+
 module.exports = {
   listTeacherExams,
   getExamDetails,
@@ -233,5 +246,6 @@ module.exports = {
   updateExam,
   cloneExam,
   togglePublication,
-  getExamResults
+  getExamResults,
+  listStudentsForAssignment
 };

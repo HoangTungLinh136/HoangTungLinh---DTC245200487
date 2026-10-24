@@ -122,12 +122,12 @@ const API = {
               <input type="password" id="cp-old-pwd" class="form-control" required placeholder="Nhập mật khẩu hiện tại" style="width: 100%;">
             </div>
             <div class="form-group" style="margin-bottom: 1rem;">
-              <label class="form-label" for="cp-new-pwd" style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.35rem;">Mật khẩu mới (tối thiểu 6 ký tự)</label>
-              <input type="password" id="cp-new-pwd" class="form-control" required minlength="6" placeholder="Nhập mật khẩu mới" style="width: 100%;">
+              <label class="form-label" for="cp-new-pwd" style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.35rem;">Mật khẩu mới (tối thiểu 8 ký tự)</label>
+              <input type="password" id="cp-new-pwd" class="form-control" required minlength="8" placeholder="Nhập mật khẩu mới" style="width: 100%;">
             </div>
             <div class="form-group" style="margin-bottom: 1.5rem;">
               <label class="form-label" for="cp-confirm-pwd" style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.35rem;">Xác nhận mật khẩu mới</label>
-              <input type="password" id="cp-confirm-pwd" class="form-control" required minlength="6" placeholder="Nhập lại mật khẩu mới" style="width: 100%;">
+              <input type="password" id="cp-confirm-pwd" class="form-control" required minlength="8" placeholder="Nhập lại mật khẩu mới" style="width: 100%;">
             </div>
             <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
               <button type="button" class="btn btn-secondary" onclick="API.closeChangePasswordModal()">Hủy</button>

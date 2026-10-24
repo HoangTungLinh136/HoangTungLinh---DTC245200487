@@ -272,6 +272,17 @@ class ExamRepository {
     );
     return attempts;
   }
+
+  async listActiveStudents(connection = null) {
+    const client = connection || db;
+    const [rows] = await client.execute(
+      `SELECT id, username, full_name, email
+       FROM users
+       WHERE role = 'student' AND status = 'active'
+       ORDER BY full_name ASC`
+    );
+    return rows;
+  }
 }
 
 module.exports = new ExamRepository();
