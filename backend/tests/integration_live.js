@@ -131,12 +131,14 @@ async function runLiveVerification() {
     }
   });
 
+  const testPassword = process.env.TEST_PASSWORD || 'Hoanglinh1#';
+
   // 8. Live API: Login as Student
   let studentToken = null;
   await check('Live API Login (student1)', async () => {
     const res = await httpPost('http://localhost:80/api/auth/login', {
       username: 'student1',
-      password: 'Password123!'
+      password: testPassword
     });
     if (res.statusCode !== 200 || !res.body.token) {
       throw new Error(`Login failed with status ${res.statusCode}: ${JSON.stringify(res.body)}`);
@@ -149,7 +151,7 @@ async function runLiveVerification() {
   await check('Live API Login (teacher1)', async () => {
     const res = await httpPost('http://localhost:80/api/auth/login', {
       username: 'teacher1',
-      password: 'Password123!'
+      password: testPassword
     });
     if (res.statusCode !== 200 || !res.body.token) {
       throw new Error(`Login failed with status ${res.statusCode}`);
@@ -162,7 +164,7 @@ async function runLiveVerification() {
   await check('Live API Login (admin)', async () => {
     const res = await httpPost('http://localhost:80/api/auth/login', {
       username: 'admin',
-      password: 'Password123!'
+      password: testPassword
     });
     if (res.statusCode !== 200 || !res.body.token) {
       throw new Error(`Login failed with status ${res.statusCode}`);

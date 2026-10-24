@@ -4,7 +4,7 @@ async function testMailpitDelivery() {
   console.log('--- Testing Mailpit Password Reset Email Delivery ---');
 
   // 1. Trigger forgot-password
-  const postData = JSON.stringify({ email: 'student1@quizsystem.local' });
+  const postData = JSON.stringify({ email: 'hoanglinh@gmail.com' });
   await new Promise((resolve, reject) => {
     const req = http.request({
       hostname: 'localhost',

@@ -1,5 +1,5 @@
 const db = require('../config/db');
-const { attemptsCompletedTotal, activeAttemptsGauge } = require('../config/metrics');
+const { attemptsCompletedTotal } = require('../config/metrics');
 
 /**
  * Deterministic integer-scaled rounding: floor((2000 * R + M) / (2 * M)) / 100
@@ -181,7 +181,6 @@ async function completeGradingJob(attemptId, workerFencingToken, totalRawScore, 
     await connection.commit();
 
     // Update Prometheus metrics
-    activeAttemptsGauge.dec();
     attemptsCompletedTotal.inc({ status: finalStatus });
 
     return {

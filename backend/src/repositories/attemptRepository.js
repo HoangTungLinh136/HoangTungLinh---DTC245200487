@@ -184,6 +184,28 @@ class AttemptRepository {
     );
     return rows;
   }
+
+  /**
+   * Count active attempts directly from MySQL (BD-09 & Prometheus observability)
+   * Distinguishes total in_progress records, within-deadline records, and overdue records.
+   */
+  async countActiveAttempts(connection = null) {
+    const client = connection || db;
+    const [rows] = await client.execute(
+      `SELECT
+         COUNT(id) AS in_progress_count,
+         COALESCE(SUM(CASE WHEN deadline_at >= CURRENT_TIMESTAMP THEN 1 ELSE 0 END), 0) AS within_deadline_count,
+         COALESCE(SUM(CASE WHEN deadline_at < CURRENT_TIMESTAMP THEN 1 ELSE 0 END), 0) AS overdue_count
+       FROM exam_attempts
+       WHERE status = 'in_progress'`
+    );
+    const row = rows && rows[0] ? rows[0] : {};
+    return {
+      inProgressCount: Number(row.in_progress_count) || 0,
+      withinDeadlineCount: Number(row.within_deadline_count) || 0,
+      overdueCount: Number(row.overdue_count) || 0
+    };
+  }
 }
 
 module.exports = new AttemptRepository();

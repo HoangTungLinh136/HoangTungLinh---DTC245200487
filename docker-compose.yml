@@ -5,10 +5,10 @@ services:
     container_name: quizsystem-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: RootPassword123!
-      MYSQL_DATABASE: quizsystem
-      MYSQL_USER: quiz_user
-      MYSQL_PASSWORD: QuizPass123!
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-quizsystem}
+      MYSQL_USER: ${MYSQL_USER:-quiz_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
       # Host port 3307 mapped to container 3306 (avoids conflict with host MySQL267 on 3306)
       - "3307:3306"
@@ -17,7 +17,7 @@ services:
       - ./database/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
       - ./database/02_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "quiz_user", "-pQuizPass123!"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${MYSQL_USER:-quiz_user}", "-p${MYSQL_PASSWORD}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -35,14 +35,15 @@ services:
     environment:
       PORT: 3000
       NODE_ENV: production
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_USER: quiz_user
-      DB_PASSWORD: QuizPass123!
-      DB_NAME: quizsystem
+      DB_HOST: ${DB_HOST:-mysql}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_USER: ${DB_USER:-quiz_user}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME:-quizsystem}
       SMTP_HOST: mailpit
       SMTP_PORT: 1025
-      FRONTEND_URL: http://localhost
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost,http://127.0.0.1}
     ports:
       - "3000:3000"
     volumes:
@@ -61,8 +62,8 @@ services:
     environment:
       PMA_HOST: mysql
       PMA_PORT: 3306
-      PMA_USER: root
-      PMA_PASSWORD: RootPassword123!
+      PMA_USER: ${PMA_USER:-root}
+      PMA_PASSWORD: ${PMA_PASSWORD:-${MYSQL_ROOT_PASSWORD}}
       UPLOAD_LIMIT: 64M
     ports:
       - "8081:80"
@@ -114,8 +115,8 @@ services:
     ports:
       - "3001:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - grafana_data:/var/lib/grafana

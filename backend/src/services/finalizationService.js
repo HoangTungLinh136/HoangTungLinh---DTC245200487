@@ -88,11 +88,13 @@ function startFinalizationWorker(intervalMs = 10000) {
     await processExpiredAttempts();
     await processStaleGradingRecovery();
   }, intervalMs);
+  if (timer.unref) timer.unref();
 
   // Housekeeping tick every 60 seconds
   const cleanupTimer = setInterval(async () => {
     await processExpiredTokenCleanup();
   }, 60000);
+  if (cleanupTimer.unref) cleanupTimer.unref();
 
   return { timer, cleanupTimer };
 }

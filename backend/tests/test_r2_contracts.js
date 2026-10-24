@@ -82,12 +82,17 @@ async function runR2TestSuite() {
 
   try {
     // Acquire credentials for student1, student2, teacher1
-    const s1Login = await request('POST', '/auth/login', { username: 'student1', password: 'Password123!' });
-    const s1Token = s1Login.body.token;
+    let s1Login = await request('POST', '/auth/login', { username: 'student1', password: 'Password123!' });
+    let authPass = 'Password123!';
+    if (s1Login.statusCode !== 200) {
+      s1Login = await request('POST', '/auth/login', { username: 'student1', password: 'Hoanglinh1#' });
+      authPass = 'Hoanglinh1#';
+    }
+    const s1Token = s1Login.body ? s1Login.body.token : null;
     const s1Headers = { 'Authorization': `Bearer ${s1Token}` };
 
-    const s2Login = await request('POST', '/auth/login', { username: 'student2', password: 'Password123!' });
-    const s2Token = s2Login.body.token;
+    const s2Login = await request('POST', '/auth/login', { username: 'student2', password: authPass });
+    const s2Token = s2Login.body ? s2Login.body.token : null;
     const s2Headers = { 'Authorization': `Bearer ${s2Token}` };
 
     const [u1] = await db.execute("SELECT id FROM users WHERE username = 'student1'");

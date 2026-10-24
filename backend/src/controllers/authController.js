@@ -274,8 +274,8 @@ async function changePassword(req, res) {
       return res.status(400).json({ error: 'Mật khẩu hiện tại và mật khẩu mới là bắt buộc' });
     }
 
-    if (newPassword.length < 6) {
-      return res.status(400).json({ error: 'Mật khẩu mới phải có ít nhất 6 ký tự' });
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'Mật khẩu mới phải có ít nhất 8 ký tự' });
     }
 
     if (newPassword === currentPassword) {

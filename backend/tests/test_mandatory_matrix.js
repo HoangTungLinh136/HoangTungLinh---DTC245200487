@@ -71,17 +71,22 @@ async function runMandatoryTests() {
   }
 
   try {
-    // Acquire auth tokens
-    const sLogin = await request('POST', '/auth/login', { username: 'student1', password: 'Password123!' });
-    const sToken = sLogin.body.token;
+    // Acquire auth tokens dynamically
+    let authPass = process.env.TEST_PASSWORD || 'Hoanglinh1#';
+    let sLogin = await request('POST', '/auth/login', { username: 'student1', password: authPass });
+    if (sLogin.status !== 200) {
+      authPass = 'Password123!';
+      sLogin = await request('POST', '/auth/login', { username: 'student1', password: authPass });
+    }
+    const sToken = sLogin.body ? sLogin.body.token : null;
     const sHeaders = { 'Authorization': `Bearer ${sToken}` };
 
-    const tLogin = await request('POST', '/auth/login', { username: 'teacher1', password: 'Password123!' });
-    const tToken = tLogin.body.token;
+    const tLogin = await request('POST', '/auth/login', { username: 'teacher1', password: authPass });
+    const tToken = tLogin.body ? tLogin.body.token : null;
     const tHeaders = { 'Authorization': `Bearer ${tToken}` };
 
-    const aLogin = await request('POST', '/auth/login', { username: 'admin', password: 'Password123!' });
-    const aToken = aLogin.body.token;
+    const aLogin = await request('POST', '/auth/login', { username: 'admin', password: authPass });
+    const aToken = aLogin.body ? aLogin.body.token : null;
     const aHeaders = { 'Authorization': `Bearer ${aToken}` };
 
     // ------------------------------------------------------------------------
@@ -91,7 +96,7 @@ async function runMandatoryTests() {
       // Clean previous attempts for student2 on exam 2 to test fresh start race
       const [uRows] = await db.execute("SELECT id FROM users WHERE username = 'student2'");
       const student2Id = uRows[0].id;
-      const s2Login = await request('POST', '/auth/login', { username: 'student2', password: 'Password123!' });
+      const s2Login = await request('POST', '/auth/login', { username: 'student2', password: authPass });
       const s2Headers = { 'Authorization': `Bearer ${s2Login.body.token}` };
 
       await db.execute('DELETE FROM exam_attempts WHERE student_id = ? AND exam_id = 2', [student2Id]);
@@ -181,7 +186,7 @@ async function runMandatoryTests() {
       // Create new fresh attempt on Exam 1 for student2
       const [u2] = await db.execute("SELECT id FROM users WHERE username = 'student2'");
       const student2Id = u2[0].id;
-      const s2Login = await request('POST', '/auth/login', { username: 'student2', password: 'Password123!' });
+      const s2Login = await request('POST', '/auth/login', { username: 'student2', password: authPass });
       const s2Headers = { 'Authorization': `Bearer ${s2Login.body.token}` };
 
       // Make sure exam 1 has attempts available
@@ -218,7 +223,7 @@ async function runMandatoryTests() {
     // TEST 4: T-ORD-04 — SAVE after SUBMIT (BD-07 / BD-13 / IA01-F03 / R8-D09)
     // ------------------------------------------------------------------------
     try {
-      const s2Login = await request('POST', '/auth/login', { username: 'student2', password: 'Password123!' });
+      const s2Login = await request('POST', '/auth/login', { username: 'student2', password: authPass });
       const s2Headers = { 'Authorization': `Bearer ${s2Login.body.token}` };
 
       // Submit the attempt
@@ -252,7 +257,7 @@ async function runMandatoryTests() {
     try {
       const [u2] = await db.execute("SELECT id FROM users WHERE username = 'student2'");
       const student2Id = u2[0].id;
-      const s2Login = await request('POST', '/auth/login', { username: 'student2', password: 'Password123!' });
+      const s2Login = await request('POST', '/auth/login', { username: 'student2', password: authPass });
       const s2Headers = { 'Authorization': `Bearer ${s2Login.body.token}` };
 
       // Start new attempt on Exam 2
@@ -288,7 +293,7 @@ async function runMandatoryTests() {
     // TEST 6: T-IDP-06 — Duplicate request / SUBMIT replay (BD-07 / IA01-F03 / R8-D09)
     // ------------------------------------------------------------------------
     try {
-      const s2Login = await request('POST', '/auth/login', { username: 'student2', password: 'Password123!' });
+      const s2Login = await request('POST', '/auth/login', { username: 'student2', password: authPass });
       const s2Headers = { 'Authorization': `Bearer ${s2Login.body.token}` };
 
       // Submit testAttemptId a second time
@@ -435,7 +440,7 @@ async function runMandatoryTests() {
       // Ensure exam 2 has publication flags = 0
       await db.execute('UPDATE exams SET is_published_scores = 0, is_published_answers = 0 WHERE id = 2');
 
-      const s2Login = await request('POST', '/auth/login', { username: 'student2', password: 'Password123!' });
+      const s2Login = await request('POST', '/auth/login', { username: 'student2', password: authPass });
       const s2Headers = { 'Authorization': `Bearer ${s2Login.body.token}` };
 
       // Query result of an attempt on exam 2

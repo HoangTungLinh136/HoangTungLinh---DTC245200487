@@ -21,11 +21,55 @@ const healthRoutes = require('./routes/healthRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors({
-  origin: true,
-  credentials: true
-}));
+// Express reverse proxy trust: 1 hop from Nginx (SEC-02 IP extraction)
+app.set('trust proxy', 1);
+
+// CORS configuration (SEC-01: Restricted Origin whitelist with credentials)
+const defaultAllowedOrigins = [
+  'http://localhost',
+  'http://127.0.0.1',
+  'http://localhost:80',
+  'http://127.0.0.1:80',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000'
+];
+
+const allowedOriginsSet = new Set(defaultAllowedOrigins);
+if (process.env.FRONTEND_URL) {
+  try {
+    const parsed = new URL(process.env.FRONTEND_URL);
+    allowedOriginsSet.add(parsed.origin);
+  } catch (_) {
+    allowedOriginsSet.add(process.env.FRONTEND_URL.trim());
+  }
+}
+if (process.env.ALLOWED_ORIGINS) {
+  process.env.ALLOWED_ORIGINS.split(',').forEach(o => {
+    const trimmed = o.trim();
+    if (trimmed) allowedOriginsSet.add(trimmed);
+  });
+}
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow non-browser requests with no origin (e.g. same-origin via Nginx proxy, curl, server-to-server)
+    if (!origin) {
+      return callback(null, true);
+    }
+    if (allowedOriginsSet.has(origin)) {
+      return callback(null, true);
+    }
+    // Block untrusted origins by withholding Access-Control-Allow-Origin
+    return callback(null, false);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Request-Id'],
+  exposedHeaders: ['X-Request-Id']
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -86,10 +130,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start background finalization scheduler (BD-07)
-startFinalizationWorker(10000);
-
 if (process.env.NODE_ENV !== 'test') {
+  // Start background finalization scheduler (BD-07)
+  startFinalizationWorker(10000);
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`[QuizSystem] Backend server is listening on port ${PORT}`);
     console.log(`[QuizSystem] Metrics available at http://localhost:${PORT}/metrics`);

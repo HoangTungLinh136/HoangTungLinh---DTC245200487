@@ -1,4 +1,5 @@
 const client = require('prom-client');
+const attemptRepo = require('../repositories/attemptRepository');
 
 // Initialize default system metrics (memory, cpu, gc, event loop)
 const register = new client.Registry();
@@ -21,10 +22,22 @@ const httpRequestsTotal = new client.Counter({
 });
 register.registerMetric(httpRequestsTotal);
 
-// Active exam attempts gauge
+// Active exam attempts gauge (Authoritative state dynamically queried from MySQL)
 const activeAttemptsGauge = new client.Gauge({
   name: 'quizsystem_active_attempts_total',
-  help: 'Current count of active in-progress student exam attempts'
+  help: 'Current count of active in-progress student exam attempts',
+  async collect() {
+    try {
+      const stats = await attemptRepo.countActiveAttempts();
+      this.set(stats.inProgressCount);
+    } catch (err) {
+      console.error('[Metrics] Failed to collect active attempts from database:', err.message);
+      // Requirement 5: Do NOT set false values (such as 0 or -1).
+      // Rethrowing causes register.metrics() to fail, prompting /metrics to return 500,
+      // signaling scrape failure to Prometheus and preventing ingestion of misleading data.
+      throw err;
+    }
+  }
 });
 register.registerMetric(activeAttemptsGauge);
 

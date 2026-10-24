@@ -5,7 +5,6 @@ const questionRepo = require('../repositories/questionRepository');
 const auditRepo = require('../repositories/auditRepository');
 const receiptRepo = require('../repositories/receiptRepository');
 const { gradeAttempt } = require('../services/scoringService');
-const { activeAttemptsGauge } = require('../config/metrics');
 
 /**
  * List exams available for student (Public + Assigned) - BD-10
@@ -169,7 +168,6 @@ async function startOrResumeAttempt(req, res) {
           );
         }
 
-        activeAttemptsGauge.inc();
         await auditRepo.log(studentId, 'START_ATTEMPT', 'ATTEMPT', attemptId, { examId, attemptNumber }, req.ip, connection);
       }
     }
