@@ -593,7 +593,7 @@ INSERT INTO exam_attempts (id, exam_id, student_id, attempt_number, status, grad
 -- 5. Exam 3 (Lần 1 - HẾT GIỜ và được server chốt bài: status=expired, điểm 6.0/10)
 (5, 3, 3, 1, 'expired', 'graded', 5, 6.00, 6.00, '2026-10-20 09:00:00', '2026-10-20 09:25:00', '2026-10-20 09:25:05', '2026-10-20 09:25:00'),
 -- 6. Exam 4 (Lần 1 - ĐANG LÀM BÀI, CÒN THỜI GIAN: status=in_progress, deadline còn trong tương lai)
-(6, 4, 3, 1, 'in_progress', 'ungraded', 0, NULL, NULL, NOW(), NULL, NULL, DATE_ADD(NOW(), INTERVAL 25 MINUTE)),
+(6, 4, 3, 1, 'in_progress', 'ungraded', 0, NULL, NULL, NOW(), NULL, NULL, DATE_ADD(NOW(), INTERVAL 24 HOUR)),
 -- 7. Exam 5 (Assigned - Đã công bố điểm 8.35 nhưng CHƯA CÔNG BỐ ĐÁP ÁN)
 (7, 5, 3, 1, 'completed', 'graded', 7, 8.35, 8.35, '2026-10-21 14:00:00', '2026-10-21 14:38:10', '2026-10-21 14:38:15', '2026-10-21 14:45:00'),
 -- 8. Exam 6 (Assigned - ĐÃ CHẤM nhưng CHƯA CÔNG BỐ ĐIỂM / Bảo mật)

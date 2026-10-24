@@ -130,6 +130,7 @@ CREATE TABLE IF NOT EXISTS exam_attempts (
     status ENUM('in_progress', 'completed', 'expired', 'abandoned') NOT NULL DEFAULT 'in_progress',
     grading_status ENUM('ungraded', 'grading', 'graded', 'failed') NOT NULL DEFAULT 'ungraded',
     grading_fencing_token INT NOT NULL DEFAULT 0,
+    grading_retry_count INT NOT NULL DEFAULT 0,
     grading_lease_expires_at TIMESTAMP NULL DEFAULT NULL,
     raw_score DECIMAL(6, 2) NULL DEFAULT NULL,
     score DECIMAL(4, 2) NULL DEFAULT NULL,
