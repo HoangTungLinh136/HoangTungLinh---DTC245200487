@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuizSystem — Thi dễ dàng - Quản lý hiệu quả (Đề tài 35)</title>
+  <meta name="description" content="QuizSystem — Hệ thống Quiz & Thi trắc nghiệm trực tuyến hiện đại, bảo mật và hiệu quả dành cho Sinh viên, Giảng viên và Quản trị viên.">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Core App Styles & Dedicated Auth Styles (with cache busting) -->
+  <link rel="stylesheet" href="/css/style.css?v=20261023">
+  <link rel="stylesheet" href="/css/auth.css?v=20261023">
+
+  <style>
+    /* Bắt buộc thông báo toàn hệ thống hiển thị góc trên bên phải */
+    #toast-container,
+    .toast-container {
+      position: fixed !important;
+      top: 1.25rem !important;
+      right: 1.5rem !important;
+      bottom: auto !important;
+      left: auto !important;
+      z-index: 999999 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 0.65rem !important;
+      pointer-events: none !important;
+      max-width: 420px !important;
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-layout">
+  <!-- ========================================================================
+       1. HEADER — Thanh điều hướng chuẩn tham chiếu
+       ======================================================================== -->
+  <header class="header-navbar">
+    <div class="header-container">
+      <!-- Logo thương hiệu bên trái -->
+      <a href="/" class="header-brand" title="QuizSystem — Trang chủ">
+        <svg class="header-brand-logo" viewBox="0 0 36 36" fill="currentColor">
+          <!-- Graduation Cap Icon -->
+          <path d="M18 4L2 12L18 20L31 13.5V23H33V12L18 4Z" />
+          <path d="M7 17.5V24C7 27.5 11.9 30 18 30C24.1 30 29 27.5 29 24V17.5L18 23L7 17.5Z" />
+        </svg>
+        <span class="header-brand-name">QuizSystem</span>
+      </a>
+
+      <!-- Menu chính giữa -->
+      <nav class="header-menu" aria-label="Điều hướng chính">
+        <a href="#home" class="nav-link active" onclick="handleNavClick(event, 'home')">Trang chủ</a>
+        <a href="#about" class="nav-link" onclick="handleNavClick(event, 'about')">Giới thiệu</a>
+        <a href="#features" class="nav-link" onclick="handleNavClick(event, 'features')">Tính năng</a>
+        <a href="#pricing" class="nav-link" onclick="handleNavClick(event, 'pricing')">Bảng giá</a>
+        <a href="#support" class="nav-link" onclick="handleNavClick(event, 'support')">Hỗ trợ</a>
+      </nav>
+
+      <!-- Tiện ích bên phải -->
+      <div class="header-actions">
+        <!-- Chuyển giao diện sáng/tối -->
+        <button class="action-icon-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Giao diện sáng / tối" aria-label="Đổi giao diện">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+
+        <!-- Biểu tượng ngôn ngữ -->
+        <button class="action-icon-btn" id="lang-toggle-btn" onclick="toggleLanguage()" title="Ngôn ngữ (Tiếng Việt)" aria-label="Chọn ngôn ngữ">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+        </button>
+
+        <!-- Nút Đăng nhập viền xanh -->
+        <button class="btn-header-login" id="header-login-btn" onclick="switchAuthTab('login')">
+          Đăng nhập
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       2. MAIN CONTENT (HERO SECTION + AUTH CARD)
+       ======================================================================== -->
+  <main class="main-wrapper">
+    <div class="hero-auth-grid">
+      <!-- 2.1 Hero Section — Khu vực bên trái (Chiếm khoảng 60%) -->
+      <section class="hero-column" aria-label="Giới thiệu QuizSystem">
+        <div class="hero-illustration-wrapper">
+          <img src="/img/hero-illustration.png" 
+               alt="QuizSystem — Thi dễ dàng - Quản lý hiệu quả. Không gian học tập với nữ sinh đeo tai nghe làm bài quiz trên laptop." 
+               class="hero-illustration-img"
+               loading="eager"
+               decoding="async">
+        </div>
+      </section>
+
+      <!-- 2.2 Authentication Card — Khu vực bên phải (Chiếm khoảng 35-40%) -->
+      <section class="auth-column" aria-label="Xác thực người dùng">
+        <!-- Tiêu đề thương hiệu hiển thị trên mobile khi hero ẩn -->
+        <div class="hero-mobile-branding">
+          <h1>QuizSystem</h1>
+          <p>Thi dễ dàng – Quản lý hiệu quả</p>
+        </div>
+
+        <div class="auth-card">
+          <!-- Card Header: Logo + Tên + Phụ đề đề tài -->
+          <div class="card-header">
+            <div class="card-brand-row">
+              <svg class="card-brand-logo" viewBox="0 0 36 36" fill="currentColor">
+                <path d="M18 4L2 12L18 20L31 13.5V23H33V12L18 4Z" />
+                <path d="M7 17.5V24C7 27.5 11.9 30 18 30C24.1 30 29 27.5 29 24V17.5L18 23L7 17.5Z" />
+              </svg>
+              <h2 class="card-brand-title">QuizSystem</h2>
+            </div>
+            <p class="card-subtitle">Đề tài 35 - Hệ thống Quiz/Thi trắc nghiệm</p>
+          </div>
+
+          <!-- Thanh Tabs: Đăng nhập | Đăng ký | Quên mật khẩu -->
+          <div class="auth-tabs" role="tablist">
+            <button class="tab-btn active" id="tab-login-btn" onclick="switchAuthTab('login')" role="tab" aria-selected="true" aria-controls="login-form">
+              Đăng nhập
+            </button>
+            <button class="tab-btn" id="tab-register-btn" onclick="switchAuthTab('register')" role="tab" aria-selected="false" aria-controls="register-form">
+              Đăng ký
+            </button>
+            <button class="tab-btn" id="tab-forgot-btn" onclick="switchAuthTab('forgot')" role="tab" aria-selected="false" aria-controls="forgot-form">
+              Quên mật khẩu
+            </button>
+          </div>
+
+          <!-- ==========================================
+               TAB 1: FORM ĐĂNG NHẬP (Chính xác theo ảnh)
+               ========================================== -->
+          <form id="login-form" class="auth-form active" onsubmit="handleLogin(event)" role="tabpanel">
+            <!-- Email hoặc tên đăng nhập -->
+            <div class="form-group">
+              <label class="form-label" for="login-username">Email hoặc tên đăng nhập</label>
+              <div class="input-wrapper">
+                <span class="input-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                </span>
+                <input type="text" id="login-username" class="form-control" required placeholder="student1" autocomplete="username">
+              </div>
+            </div>
+
+            <!-- Mật khẩu -->
+            <div class="form-group">
+              <label class="form-label" for="login-password">Mật khẩu</label>
+              <div class="input-wrapper">
+                <span class="input-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                </span>
+                <input type="password" id="login-password" class="form-control" required placeholder="••••••••••••" autocomplete="current-password">
+                <button type="button" class="pwd-toggle-btn" id="pwd-toggle-btn" onclick="togglePasswordVisibility('login-password', this)" title="Hiện / Ẩn mật khẩu" aria-label="Hiện hoặc ẩn mật khẩu">
+                  <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Tùy chọn: Ghi nhớ đăng nhập & Quên mật khẩu? -->
+            <div class="form-options-row">
+              <label class="custom-checkbox-label" for="remember-me">
+                <input type="checkbox" id="remember-me" checked>
+                <span class="custom-checkbox-box" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </span>
+                <span>Ghi nhớ đăng nhập</span>
+              </label>
+              <a href="#" class="forgot-pwd-link" onclick="switchAuthTab('forgot', event)">Quên mật khẩu?</a>
+            </div>
+
+            <!-- Nút Đăng nhập -->
+            <button type="submit" class="btn-submit-primary" id="btn-submit-login">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                <polyline points="10 17 15 12 10 7"></polyline>
+                <line x1="15" y1="12" x2="3" y2="12"></line>
+              </svg>
+              <span>Đăng nhập</span>
+            </button>
+
+            <!-- Đường phân cách: Hoặc đăng nhập với vai trò -->
+            <div class="role-divider">
+              <span>Hoặc đăng nhập với vai trò</span>
+            </div>
+
+            <!-- 3 Thẻ vai trò mẫu (Demo credentials helper) -->
+            <div class="role-cards-grid" role="group" aria-label="Chọn tài khoản thử nghiệm theo vai trò">
+              <!-- Sinh viên -->
+              <div class="role-card-item role-card-student" id="role-card-student" onclick="selectRolePreset('student')" title="Điền tài khoản Sinh viên (student1)">
+                <div class="role-icon-circle">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 3L1 9L12 15L21 10.09V17H23V9L12 3Z"/>
+                    <path d="M5 13.18V17.18C5 19.5 8.13 21 12 21C15.87 21 19 19.5 19 17.18V13.18L12 17L5 13.18Z"/>
+                  </svg>
+                </div>
+                <div class="role-item-name">Sinh viên</div>
+                <div class="role-item-desc">Làm bài thi</div>
+              </div>
+
+              <!-- Giáo viên -->
+              <div class="role-card-item role-card-teacher" id="role-card-teacher" onclick="selectRolePreset('teacher')" title="Điền tài khoản Giáo viên (teacher1)">
+                <div class="role-icon-circle">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                </div>
+                <div class="role-item-name">Giáo viên</div>
+                <div class="role-item-desc">Tạo đề và quản lý</div>
+              </div>
+
+              <!-- Quản trị viên -->
+              <div class="role-card-item role-card-admin" id="role-card-admin" onclick="selectRolePreset('admin')" title="Điền tài khoản Quản trị viên (admin)">
+                <div class="role-icon-circle">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                  </svg>
+                </div>
+                <div class="role-item-name">Quản trị viên</div>
+                <div class="role-item-desc">Quản lý hệ thống</div>
+              </div>
+            </div>
+
+            <!-- Security Banner (Chuẩn tham chiếu) -->
+            <div class="security-banner-box">
+              <div class="security-banner-left">
+                <div class="security-shield-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1ZM10 16.5L6 12.5L7.41 11.09L10 13.67L16.59 7.09L18 8.5L10 16.5Z"/>
+                  </svg>
+                </div>
+                <div class="security-text-group">
+                  <span class="security-headline">Hệ thống an toàn và bảo mật</span>
+                  <span class="security-subtext">Dữ liệu được mã hóa và bảo vệ theo tiêu chuẩn hiện đại</span>
+                </div>
+              </div>
+              <div class="security-chevron-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </div>
+            </div>
+          </form>
+
+          <!-- ==========================================
+               TAB 2: FORM ĐĂNG KÝ (BD-01: Sinh viên & Giáo viên)
+               ========================================== -->
+          <form id="register-form" class="auth-form" onsubmit="handleRegister(event)" role="tabpanel" style="display: none;">
+            <!-- Chọn vai trò -->
+            <div class="form-group">
+              <label class="form-label" for="reg-role">Vai trò đăng ký</label>
+              <div class="input-wrapper select-wrapper">
+                <span class="input-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                </span>
+                <select id="reg-role" class="form-control" required>
+                  <option value="student">Sinh viên (Học sinh làm bài thi)</option>
+                  <option value="teacher">Giảng viên (Tạo đề và quản lý)</option>
+                </select>
+                <span class="select-chevron">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </span>
+              </div>
+            </div>
+
+            <!-- Họ và tên -->
+            <div class="form-group">
+              <label class="form-label" for="reg-fullname">Họ và tên</label>
+              <div class="input-wrapper">
+                <span class="input-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                </span>
+                <input type="text" id="reg-fullname" class="form-control" required placeholder="Ví dụ: Nguyễn Văn A" autocomplete="name">
+              </div>
+            </div>
+
+            <!-- Tên đăng nhập -->
+            <div class="form-group">
+              <label class="form-label" for="reg-username">Tên đăng nhập</label>
+              <div class="input-wrapper">
+                <span class="input-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="4"></circle>
+                    <path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"></path>
+                  </svg>
+                </span>
+                <input type="text" id="reg-username" class="form-control" required placeholder="username_moi" autocomplete="username">
+              </div>
+            </div>
+
+            <!-- Email -->
+            <div class="form-group">
+              <label class="form-label" for="reg-email">Email</label>
+              <div class="input-wrapper">
+                <span class="input-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
+                </span>
+                <input type="email" id="reg-email" class="form-control" required placeholder="email@domain.com" autocomplete="email">
+              </div>
+            </div>
+
+            <!-- Mật khẩu -->
+            <div class="form-group">
+              <label class="form-label" for="reg-password">Mật khẩu (tối thiểu 8 ký tự)</label>
+              <div class="input-wrapper">
+                <span class="input-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                </span>
+                <input type="password" id="reg-password" class="form-control" required minlength="8" placeholder="••••••••" autocomplete="new-password">
+                <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility('reg-password', this)" title="Hiện / Ẩn mật khẩu">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-submit-primary" id="btn-submit-reg">
+              <span>Đăng Ký & Kích Hoạt Ngay</span>
+            </button>
+          </form>
+
+          <!-- ==========================================
+               TAB 3: FORM QUÊN MẬT KHẨU (BD-11)
+               ========================================== -->
+          <form id="forgot-form" class="auth-form" onsubmit="handleForgotPassword(event)" role="tabpanel" style="display: none;">
+            <div class="form-helper-box">
+              Nhập địa chỉ email tài khoản của bạn. Hệ thống sẽ tạo liên kết bảo mật và gửi tới hòm thư phát triển (Mailpit port 8025).
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="forgot-email">Địa chỉ Email tài khoản</label>
+              <div class="input-wrapper">
+                <span class="input-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
+                </span>
+                <input type="email" id="forgot-email" class="form-control" required placeholder="student1@quizsystem.local" autocomplete="email">
+              </div>
+            </div>
+
+            <button type="submit" class="btn-submit-primary" id="btn-submit-forgot" style="margin-bottom: 1rem;">
+              <span>Gửi Liên Kết Đặt Lại</span>
+            </button>
+
+            <div style="text-align: center;">
+              <a href="#" class="forgot-pwd-link" onclick="switchAuthTab('login', event)">← Quay lại trang Đăng nhập</a>
+            </div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ========================================================================
+       3. FOOTER — Chuẩn tham chiếu
+       ======================================================================== -->
+  <footer class="footer-bar">
+    <div class="footer-container">
+      <div class="footer-left">
+        <svg class="footer-logo" viewBox="0 0 36 36" fill="currentColor">
+          <path d="M18 4L2 12L18 20L31 13.5V23H33V12L18 4Z" />
+          <path d="M7 17.5V24C7 27.5 11.9 30 18 30C24.1 30 29 27.5 29 24V17.5L18 23L7 17.5Z" />
+        </svg>
+        <span class="footer-brand">QuizSystem</span>
+        <span>© 2026 QuizSystem. Đề tài 35 - Hệ thống Quiz/Thi trắc nghiệm.</span>
+      </div>
+
+      <div class="footer-right">
+        <a href="#terms" class="footer-link" onclick="openInfoModal('terms', event)">Điều khoản sử dụng</a>
+        <span class="footer-divider">|</span>
+        <a href="#privacy" class="footer-link" onclick="openInfoModal('privacy', event)">Chính sách bảo mật</a>
+        <span class="footer-divider">|</span>
+        <a href="#support" class="footer-link" onclick="openInfoModal('support', event)">Liên hệ hỗ trợ</a>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ========================================================================
+     4. MODALS: FORGOT PASSWORD (BACKWARD-COMPATIBLE) & INFO MODAL
+     ======================================================================== -->
+<!-- Modal Quên Mật Khẩu tương thích các gọi từ API cũ -->
+<div class="modal-overlay" id="forgot-modal">
+  <div class="modal-content">
+    <button class="modal-close-btn" onclick="closeForgotPassword()" aria-label="Đóng modal">×</button>
+    <h3 style="margin-bottom: 0.5rem; font-size: 1.25rem; font-weight: 700; color: var(--navy);">Quên Mật Khẩu</h3>
+    <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+      Nhập địa chỉ email tài khoản của bạn. Hệ thống sẽ gửi một liên kết an toàn tới hộp thư phát triển Mailpit (port 8025).
+    </p>
+    <form onsubmit="handleForgotPasswordModal(event)">
+      <div class="form-group">
+        <label class="form-label" for="modal-forgot-email">Địa chỉ Email</label>
+        <div class="input-wrapper">
+          <span class="input-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+          </span>
+          <input type="email" id="modal-forgot-email" class="form-control" required placeholder="student1@quizsystem.local">
+        </div>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+        <button type="button" class="btn btn-secondary" onclick="closeForgotPassword()">Hủy</button>
+        <button type="submit" class="btn btn-primary" id="btn-submit-modal-forgot">Gửi Liên Kết</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Thông tin chung (Điều khoản, Chính sách, Hỗ trợ) -->
+<div class="modal-overlay" id="info-modal">
+  <div class="modal-content">
+    <button class="modal-close-btn" onclick="closeInfoModal()" aria-label="Đóng modal">×</button>
+    <h3 id="info-modal-title" style="margin-bottom: 0.75rem; font-size: 1.25rem; font-weight: 700; color: var(--navy);">Thông tin</h3>
+    <div id="info-modal-body" style="font-size: 0.9rem; color: var(--text-body); line-height: 1.6; margin-bottom: 1.5rem;">
+      <!-- Nội dung động -->
+    </div>
+    <div style="display: flex; justify-content: flex-end;">
+      <button type="button" class="btn btn-primary" onclick="closeInfoModal()">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================
+     5. SCRIPTS & TÍCH HỢP HỆ THỐNG
+     ======================================================================== -->
+<script src="/js/api.js?v=20261023"></script>
+<script>
+  // Kiểm tra phiên đăng nhập đã tồn tại
+  document.addEventListener('DOMContentLoaded', () => {
+    // 1. Nếu đã đăng nhập với token hợp lệ, chuyển hướng vào dashboard tương ứng
+    const user = API.getUser();
+    if (user && API.getToken()) {
+      redirectToDashboard(user.role);
+      return;
+    }
+
+    // 2. Tự động điền tên đăng nhập đã ghi nhớ (nếu có)
+    const savedUser = localStorage.getItem('quiz_remembered_username');
+    if (savedUser) {
+      const userInput = document.getElementById('login-username');
+      if (userInput) {
+        userInput.value = savedUser;
+      }
+      const rememberCheckbox = document.getElementById('remember-me');
+      if (rememberCheckbox) {
+        rememberCheckbox.checked = true;
+      }
+    }
+  });
+
+  /**
+   * Chuyển đổi giữa các Tab: Đăng nhập | Đăng ký | Quên mật khẩu
+   */
+  function switchAuthTab(tab, event) {
+    if (event) event.preventDefault();
+
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const forgotForm = document.getElementById('forgot-form');
+
+    const tabLogin = document.getElementById('tab-login-btn');
+    const tabRegister = document.getElementById('tab-register-btn');
+    const tabForgot = document.getElementById('tab-forgot-btn');
+
+    // Reset active forms
+    loginForm.style.display = 'none';
+    loginForm.classList.remove('active');
+    registerForm.style.display = 'none';
+    registerForm.classList.remove('active');
+    forgotForm.style.display = 'none';
+    forgotForm.classList.remove('active');
+
+    // Reset tab buttons
+    tabLogin.classList.remove('active');
+    tabLogin.setAttribute('aria-selected', 'false');
+    tabRegister.classList.remove('active');
+    tabRegister.setAttribute('aria-selected', 'false');
+    tabForgot.classList.remove('active');
+    tabForgot.setAttribute('aria-selected', 'false');
+
+    if (tab === 'login') {
+      loginForm.style.display = 'block';
+      loginForm.classList.add('active');
+      tabLogin.classList.add('active');
+      tabLogin.setAttribute('aria-selected', 'true');
+      document.getElementById('login-username').focus();
+    } else if (tab === 'register') {
+      registerForm.style.display = 'block';
+      registerForm.classList.add('active');
+      tabRegister.classList.add('active');
+      tabRegister.setAttribute('aria-selected', 'true');
+      document.getElementById('reg-fullname').focus();
+    } else if (tab === 'forgot') {
+      forgotForm.style.display = 'block';
+      forgotForm.classList.add('active');
+      tabForgot.classList.add('active');
+      tabForgot.setAttribute('aria-selected', 'true');
+      document.getElementById('forgot-email').focus();
+    }
+  }
+
+  // Tương thích ngược với hàm switchTab('login'/'register') cũ
+  function switchTab(tab) {
+    switchAuthTab(tab);
+  }
+
+  /**
+   * Điền nhanh thông tin tài khoản mẫu theo vai trò
+   */
+  function selectRolePreset(role) {
+    switchAuthTab('login');
+    const usernameInput = document.getElementById('login-username');
+    const passwordInput = document.getElementById('login-password');
+
+    if (role === 'student') {
+      usernameInput.value = 'student1';
+      passwordInput.value = 'Hoanglinh1#';
+      showToast('Đã chọn tài khoản Sinh viên: student1', 'info');
+    } else if (role === 'teacher') {
+      usernameInput.value = 'teacher1';
+      passwordInput.value = 'Hoanglinh1#';
+      showToast('Đã chọn tài khoản Giáo viên: teacher1', 'info');
+    } else if (role === 'admin') {
+      usernameInput.value = 'admin';
+      passwordInput.value = 'Hoanglinh1#';
+      showToast('Đã chọn tài khoản Quản trị viên: admin', 'info');
+    }
+
+    // Hiệu ứng highlight nhẹ
+    usernameInput.parentElement.style.borderColor = 'var(--primary)';
+    passwordInput.parentElement.style.borderColor = 'var(--primary)';
+    setTimeout(() => {
+      usernameInput.parentElement.style.borderColor = '';
+      passwordInput.parentElement.style.borderColor = '';
+    }, 600);
+  }
+
+  // Tương thích ngược với hàm fillCred() cũ
+  function fillCred(role) {
+    selectRolePreset(role);
+  }
+
+  /**
+   * Hiện / Ẩn mật khẩu tương tác
+   */
+  function togglePasswordVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+
+    // Đổi icon hiển thị
+    btn.innerHTML = isPassword 
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+        </svg>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>`;
+  }
+
+  /**
+   * Xử lý Đăng nhập (Call backend /api/auth/login)
+   */
+  async function handleLogin(e) {
+    e.preventDefault();
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value;
+    const rememberMe = document.getElementById('remember-me').checked;
+    const btn = document.getElementById('btn-submit-login');
+
+    if (!username || !password) {
+      showToast('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu', 'error');
+      return;
+    }
+
+    try {
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner"></span> <span>Đang xác thực...</span>`;
+
+      const res = await API.post('/auth/login', { username, password });
+      API.setToken(res.token);
+      API.setUser(res.user);
+
+      // Lưu hoặc xóa trạng thái ghi nhớ tên đăng nhập
+      if (rememberMe) {
+        localStorage.setItem('quiz_remembered_username', username);
+      } else {
+        localStorage.removeItem('quiz_remembered_username');
+      }
+
+      showToast('Đăng nhập thành công! Đang chuyển hướng...', 'success');
+      setTimeout(() => redirectToDashboard(res.user.role), 500);
+    } catch (err) {
+      showToast(err.message || 'Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+          <polyline points="10 17 15 12 10 7"></polyline>
+          <line x1="15" y1="12" x2="3" y2="12"></line>
+        </svg>
+        <span>Đăng nhập</span>
+      `;
+    }
+  }
+
+  /**
+   * Xử lý Đăng ký (Call backend /api/auth/register)
+   */
+  async function handleRegister(e) {
+    e.preventDefault();
+    const role = document.getElementById('reg-role').value;
+    const fullName = document.getElementById('reg-fullname').value.trim();
+    const username = document.getElementById('reg-username').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    const btn = document.getElementById('btn-submit-reg');
+
+    if (!fullName || !username || !email || !password) {
+      showToast('Vui lòng điền đầy đủ các thông tin đăng ký', 'error');
+      return;
+    }
+
+    try {
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner"></span> <span>Đang đăng ký...</span>`;
+
+      const res = await API.post('/auth/register', { role, fullName, username, email, password });
+      showToast(res.message || 'Đăng ký thành công! Đang tự động đăng nhập...', 'success');
+
+      // Tự động đăng nhập sau khi đăng ký
+      const loginRes = await API.post('/auth/login', { username, password });
+      API.setToken(loginRes.token);
+      API.setUser(loginRes.user);
+
+      setTimeout(() => redirectToDashboard(loginRes.user.role), 600);
+    } catch (err) {
+      showToast(err.message || 'Đăng ký không thành công.', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<span>Đăng Ký & Kích Hoạt Ngay</span>`;
+    }
+  }
+
+  /**
+   * Xử lý Quên mật khẩu từ form tab
+   */
+  async function handleForgotPassword(e) {
+    e.preventDefault();
+    const email = document.getElementById('forgot-email').value.trim();
+    const btn = document.getElementById('btn-submit-forgot');
+
+    if (!email) {
+      showToast('Vui lòng nhập địa chỉ email tài khoản', 'error');
+      return;
+    }
+
+    try {
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner"></span> <span>Đang gửi yêu cầu...</span>`;
+
+      const res = await API.post('/auth/forgot-password', { email });
+      showToast(res.message || 'Liên kết đặt lại mật khẩu đã được gửi tới hòm thư của bạn!', 'info');
+      setTimeout(() => switchAuthTab('login'), 2000);
+    } catch (err) {
+      showToast(err.message || 'Không thể gửi email đặt lại mật khẩu.', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<span>Gửi Liên Kết Đặt Lại</span>`;
+    }
+  }
+
+  /**
+   * Xử lý Quên mật khẩu từ Modal cũ (Backward compatible)
+   */
+  async function handleForgotPasswordModal(e) {
+    e.preventDefault();
+    const email = document.getElementById('modal-forgot-email').value.trim();
+    const btn = document.getElementById('btn-submit-modal-forgot');
+
+    try {
+      btn.disabled = true;
+      btn.textContent = 'Đang gửi...';
+      const res = await API.post('/auth/forgot-password', { email });
+      showToast(res.message, 'info');
+      closeForgotPassword();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Gửi Liên Kết';
+    }
+  }
+
+  function openForgotPassword(e) {
+    if (e) e.preventDefault();
+    switchAuthTab('forgot');
+  }
+
+  function closeForgotPassword() {
+    document.getElementById('forgot-modal').classList.remove('open');
+  }
+
+  /**
+   * Chuyển hướng người dùng dựa theo vai trò hệ thống
+   */
+  function redirectToDashboard(role) {
+    if (role === 'admin') {
+      window.location.href = '/admin.html';
+    } else if (role === 'teacher') {
+      window.location.href = '/teacher.html';
+    } else {
+      window.location.href = '/student.html';
+    }
+  }
+
+  /**
+   * Điều hướng Menu Header & Tiện ích
+   */
+  function handleNavClick(e, section) {
+    e.preventDefault();
+    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+    e.target.classList.add('active');
+
+    if (section === 'home') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      openInfoModal(section);
+    }
+  }
+
+  function toggleTheme() {
+    showToast('Chế độ giao diện Sáng / Tối đang được kích hoạt', 'info');
+  }
+
+  function toggleLanguage() {
+    showToast('Hệ thống đang hiển thị ngôn ngữ: Tiếng Việt (Mặc định)', 'info');
+  }
+
+  /**
+   * Modal thông tin pháp lý / giới thiệu
+   */
+  function openInfoModal(type, e) {
+    if (e) e.preventDefault();
+    const modal = document.getElementById('info-modal');
+    const title = document.getElementById('info-modal-title');
+    const body = document.getElementById('info-modal-body');
+
+    if (type === 'terms') {
+      title.textContent = 'Điều khoản sử dụng';
+      body.innerHTML = `
+        <p><strong>1. Mục đích:</strong> Hệ thống QuizSystem phục vụ công tác tổ chức và quản lý thi trắc nghiệm trực tuyến (Đề tài 35 - Hoàng Tùng Linh K23).</p>
+        <p style="margin-top: 0.5rem;"><strong>2. Quy định thi:</strong> Thí sinh làm bài nghiêm túc, tuân thủ thời gian đếm ngược của đề thi. Điểm số và thời gian nộp bài được ghi nhận tự động vào cơ sở dữ liệu.</p>
+        <p style="margin-top: 0.5rem;"><strong>3. Quyền hạn:</strong> Tài khoản giáo viên và quản trị viên tuân thủ phân quyền RBAC nghiêm ngặt của hệ thống.</p>
+      `;
+    } else if (type === 'privacy') {
+      title.textContent = 'Chính sách bảo mật';
+      body.innerHTML = `
+        <p><strong>1. Bảo vệ mật khẩu:</strong> Mật khẩu người dùng được băm an toàn bằng thuật toán bcrypt với salt rounds tiêu chuẩn.</p>
+        <p style="margin-top: 0.5rem;"><strong>2. Phiên làm việc:</strong> Hệ thống sử dụng Bearer Token cho mỗi phiên đăng nhập hợp lệ và tự động thu hồi khi hết hạn hoặc đổi mật khẩu.</p>
+        <p style="margin-top: 0.5rem;"><strong>3. Riêng tư:</strong> Quản trị viên chỉ quản lý thông tin siêu dữ liệu (metadata) mà không truy cập nội dung riêng tư của đề thi.</p>
+      `;
+    } else if (type === 'support') {
+      title.textContent = 'Liên hệ hỗ trợ';
+      body.innerHTML = `
+        <p><strong>Hệ thống Quiz & Thi Trắc Nghiệm — Đề tài 35</strong></p>
+        <p style="margin-top: 0.5rem;">• Sinh viên thực hiện: Hoàng Tùng Linh — K23</p>
+        <p style="margin-top: 0.35rem;">• Hộp thư thông báo phát triển: Mailpit (Port 8025)</p>
+        <p style="margin-top: 0.35rem;">• Cổng quản trị cơ sở dữ liệu: phpMyAdmin (Port 8081)</p>
+        <p style="margin-top: 0.35rem;">• Hệ thống giám sát: Prometheus (Port 9090) & Grafana (Port 3001)</p>
+      `;
+    } else if (type === 'about') {
+      title.textContent = 'Giới thiệu QuizSystem';
+      body.innerHTML = `
+        <p>QuizSystem là nền tảng thi trắc nghiệm trực tuyến toàn diện, được thiết kế theo kiến trúc Microservices & Dockerized với Node.js, Express, MySQL 8.0 và Nginx Reverse Proxy.</p>
+        <p style="margin-top: 0.5rem;">Hỗ trợ 3 nhóm người dùng: Sinh viên làm bài, Giảng viên tạo đề và Quản trị viên quản lý toàn bộ hệ thống.</p>
+      `;
+    } else if (type === 'features') {
+      title.textContent = 'Tính năng nổi bật';
+      body.innerHTML = `
+        <ul style="padding-left: 1.25rem;">
+          <li>Ngân hàng câu hỏi trắc nghiệm đơn và nhiều lựa chọn.</li>
+          <li>Chấm điểm tự động và tính toán chuẩn xác tới 2 chữ số thập phân.</li>
+          <li>Đồng hồ đếm ngược thông minh và tự động thu bài khi hết giờ.</li>
+          <li>Hỗ trợ xuất/nhập dữ liệu và giám sát hệ thống thời gian thực với Prometheus & Grafana.</li>
+        </ul>
+      `;
+    } else if (type === 'pricing') {
+      title.textContent = 'Bảng giá';
+      body.innerHTML = `
+        <p>QuizSystem là sản phẩm nghiên cứu học thuật phục vụ Đề tài 35. Tất cả tính năng đều được cung cấp miễn phí trong khuôn khổ thử nghiệm học tập.</p>
+      `;
+    }
+
+    modal.classList.add('open');
+  }
+
+  function closeInfoModal() {
+    document.getElementById('info-modal').classList.remove('open');
+  }
+</script>
+
+</body>
+</html>

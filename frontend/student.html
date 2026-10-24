@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuizSystem — Cổng Sinh Viên</title>
+  <link rel="stylesheet" href="/css/student.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="student-body">
+
+  <!-- ========================================================================
+       1. STUDENT HEADER (MATCHING APPROVED DESIGN & BUTTON REFERENCES)
+       ======================================================================== -->
+  <header class="student-header">
+    <div class="student-header-inner">
+      <!-- Left: Logo & Portal Badge -->
+      <a href="/student.html" class="student-brand-group">
+        <svg class="student-brand-logo" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18L12 21L19 17.18V13.18L12 17L5 13.18Z"/>
+        </svg>
+        <span class="student-brand-name">QuizSystem</span>
+        <span class="student-portal-badge">Sinh Viên</span>
+      </a>
+
+      <!-- Right: User Info & Action Buttons (Image 2 exact replica) -->
+      <div class="student-user-group">
+        <div class="student-user-info">
+          <div class="student-user-name" id="user-display-name">Sinh Viên</div>
+          <div class="student-user-role">STUDENT PORTAL</div>
+        </div>
+        <div class="student-avatar" id="student-avatar-initial">S</div>
+
+        <!-- Đổi Mật Khẩu (Exact Image 2 Reference) -->
+        <button class="student-header-btn" onclick="API.openChangePasswordModal()" title="Đổi mật khẩu tài khoản">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+          <span>Đổi Mật Khẩu</span>
+        </button>
+
+        <!-- Đăng Xuất (Exact Image 2 Reference) -->
+        <button class="student-header-btn" onclick="API.logout()" title="Đăng xuất khỏi hệ thống">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          <span>Đăng Xuất</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       2. MAIN LAYOUT: SIDEBAR & INDEPENDENT MODULES
+       ======================================================================== -->
+  <div class="student-layout">
+    <!-- Sidebar -->
+    <aside class="student-sidebar">
+      <div class="sidebar-section-title">Học tập</div>
+      <ul class="sidebar-menu">
+        <li>
+          <a class="sidebar-nav-item active" id="menu-exams" onclick="switchStudentTab('exams')">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+            </svg>
+            <span>Kỳ thi hiện có</span>
+          </a>
+        </li>
+        <li>
+          <a class="sidebar-nav-item" id="menu-history" onclick="switchStudentTab('history')">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/>
+              <path d="M19 19H5V3h14v16zm2-18H3c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2z"/>
+            </svg>
+            <span>Lịch sử làm bài</span>
+          </a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="student-main">
+      <!-- Breadcrumb Navigation -->
+      <nav class="student-breadcrumb" aria-label="Breadcrumb">
+        <svg class="breadcrumb-home-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+        </svg>
+        <span class="breadcrumb-sep">&gt;</span>
+        <span>Học tập</span>
+        <span class="breadcrumb-sep">&gt;</span>
+        <span class="breadcrumb-active" id="breadcrumb-active-module">Kỳ thi hiện có</span>
+      </nav>
+
+      <!-- Active Attempt Notification Banner -->
+      <div id="active-banner" class="student-active-banner" style="display: none;">
+        <div>
+          <div class="banner-title">Bạn đang có một bài thi chưa nộp!</div>
+          <div class="banner-desc" id="active-banner-text">Vui lòng tiếp tục làm bài trước khi hết hạn thời gian.</div>
+        </div>
+        <button class="btn-banner-resume" id="btn-resume-active">Tiếp Tục Làm Bài</button>
+      </div>
+
+      <!-- ====================================================================
+           MODULE 1: DANH SÁCH KỲ THI HIỆN CÓ
+           ==================================================================== -->
+      <section id="section-exams" class="student-card">
+        <div class="card-title-bar">
+          <div class="card-title-left">
+            <svg class="card-title-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+            </svg>
+            <h2 class="card-main-title">Danh Sách Kỳ Thi Hiện Có</h2>
+          </div>
+          <button class="btn-refresh" onclick="loadAvailableExams()" title="Làm mới danh sách kỳ thi">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+            <span>Làm mới</span>
+          </button>
+        </div>
+
+        <!-- Filter Toolbar Module 1 (Approved Placement: Under Title Bar) -->
+        <div class="filter-toolbar" id="exams-filter-bar">
+          <div class="filter-left-group">
+            <div class="filter-search-box">
+              <svg class="filter-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="filter-exam-search" class="filter-input" placeholder="Tìm theo tên kỳ thi, giáo viên..." oninput="applyExamsFilter()">
+            </div>
+            <div class="filter-select-wrapper">
+              <select id="filter-exam-type" class="filter-select" onchange="applyExamsFilter()">
+                <option value="all">Hình thức: Tất cả</option>
+                <option value="public">Tự do</option>
+                <option value="assigned">Chỉ định</option>
+              </select>
+              <svg class="filter-select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="filter-select-wrapper">
+              <select id="filter-exam-status" class="filter-select" onchange="applyExamsFilter()">
+                <option value="all">Trạng thái lượt: Tất cả</option>
+                <option value="available">Còn lượt thi</option>
+                <option value="exhausted">Đã hết lượt</option>
+              </select>
+              <svg class="filter-select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+          </div>
+          <div class="filter-right-group">
+            <span class="filter-count-badge" id="exams-filter-count"></span>
+            <button class="btn-filter-reset" onclick="resetExamsFilter()" title="Đặt lại bộ lọc">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+              </svg>
+              <span>Đặt lại</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Exam Cards Grid (3 Columns on Desktop) -->
+        <div id="exams-list" class="exams-grid">
+          <p style="color: var(--student-text-muted);">Đang tải danh sách bài thi...</p>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           MODULE 2: LỊCH SỬ LÀM BÀI & KẾT QUẢ
+           ==================================================================== -->
+      <section id="section-history" class="student-card" style="display: none;">
+        <div class="card-title-bar">
+          <div class="card-title-left">
+            <svg class="card-title-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+            </svg>
+            <h2 class="card-main-title">Lịch Sử Làm Bài & Kết Quả</h2>
+          </div>
+          <button class="btn-refresh" onclick="loadPastAttempts()" title="Làm mới lịch sử làm bài">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+            <span>Làm mới</span>
+          </button>
+        </div>
+
+        <!-- Filter Toolbar Module 2 (Approved Placement: Under Title Bar) -->
+        <div class="filter-toolbar" id="history-filter-bar">
+          <div class="filter-left-group">
+            <div class="filter-search-box">
+              <svg class="filter-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="filter-history-search" class="filter-input" placeholder="Tìm theo tên kỳ thi..." oninput="applyHistoryFilter()">
+            </div>
+            <div class="filter-select-wrapper">
+              <select id="filter-history-status" class="filter-select" onchange="applyHistoryFilter()">
+                <option value="all">Trạng thái: Tất cả</option>
+                <option value="completed">Hoàn thành</option>
+                <option value="expired">Hết giờ</option>
+                <option value="in_progress">Đang làm</option>
+              </select>
+              <svg class="filter-select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+          </div>
+          <div class="filter-right-group">
+            <span class="filter-count-badge" id="history-filter-count"></span>
+            <button class="btn-filter-reset" onclick="resetHistoryFilter()" title="Đặt lại bộ lọc">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+              </svg>
+              <span>Đặt lại</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="student-table-container">
+          <table class="student-table">
+            <thead>
+              <tr>
+                <th style="min-width: 280px;">Kỳ thi</th>
+                <th style="width: 100px;">Lần thi</th>
+                <th style="width: 140px;">Trạng thái</th>
+                <th style="width: 130px;">Điểm số</th>
+                <th style="width: 180px;">Thời gian bắt đầu</th>
+                <th style="width: 120px; text-align: center;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="attempts-tbody">
+              <tr><td colspan="6" style="text-align: center; color: var(--student-text-muted); padding: 2.5rem;">Đang tải lịch sử...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ========================================================================
+       3. FULLSCREEN EXAM RUNNER INTERFACE (OPERATIONAL PRESERVATION)
+       ======================================================================== -->
+  <div class="runner-overlay" id="exam-runner">
+    <div class="runner-header">
+      <div>
+        <h3 class="runner-exam-title" id="runner-exam-title">Bài Thi Trắc Nghiệm</h3>
+        <span class="runner-attempt-info" id="runner-attempt-info">Lần thi: 1 | Đang lưu bài...</span>
+      </div>
+      <div class="timer-box">
+        <span>⏱</span>
+        <span id="countdown-timer">00:00</span>
+      </div>
+      <div>
+        <button class="btn-submit-exam" onclick="confirmSubmit()">Nộp Bài Thi</button>
+      </div>
+    </div>
+
+    <div class="runner-body">
+      <!-- Question Navigation Palette -->
+      <div class="palette-card">
+        <div class="palette-title">Danh sách câu hỏi:</div>
+        <div class="question-palette" id="question-palette"></div>
+      </div>
+
+      <!-- Active Question Card -->
+      <div class="question-card" id="question-card">
+        <div class="q-header">
+          <span class="q-badge-num" id="q-number-badge">Câu 1</span>
+          <span class="q-badge-type" id="q-type-badge">Một đáp án</span>
+        </div>
+        <h4 class="q-title-text" id="q-title">Tiêu đề câu hỏi</h4>
+        <p class="q-content-text" id="q-content"></p>
+
+        <div id="q-choices-container"></div>
+
+        <div class="q-nav-bar">
+          <button class="btn-nav-q" id="btn-prev-q" onclick="navigateQuestion(-1)">← Câu trước</button>
+          <span id="save-indicator" style="font-size: 0.825rem; color: var(--student-text-muted); align-self: center;">Đã tự động lưu</span>
+          <button class="btn-nav-q btn-nav-next" id="btn-next-q" onclick="navigateQuestion(1)">Câu tiếp theo →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       4. RESULT MODAL
+       ======================================================================== -->
+  <div class="modal-overlay" id="result-modal">
+    <div class="modal-box-card">
+      <div class="modal-box-header">
+        <h3>Kết Quả Bài Thi</h3>
+        <button class="btn-modal-close" onclick="closeResultModal()" title="Đóng">×</button>
+      </div>
+      <div id="result-content"></div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       5. JAVASCRIPT LOGIC & LIFECYCLE
+       ======================================================================== -->
+  <script src="/js/api.js"></script>
+  <script>
+    let currentExamData = null;
+    let activeAttemptId = null;
+    let currentQuestionIndex = 0;
+    let timerInterval = null;
+    let draftAnswersMap = {}; // question_id -> array of selected choice_ids
+    let currentStudentUser = null;
+    let currentActiveTab = 'exams';
+
+    // Dữ liệu thô dùng cho bộ lọc
+    let allRawExams = [];
+    let allRawAttempts = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Kiểm tra xác thực và quyền Student
+      currentStudentUser = API.getUser();
+      if (!currentStudentUser || currentStudentUser.role !== 'student' || !API.getToken()) {
+        window.location.href = '/index.html';
+        return;
+      }
+
+      // 2. Điền thông tin Student lên Header
+      const displayName = currentStudentUser.fullName || currentStudentUser.username || 'Sinh Vien';
+      document.getElementById('user-display-name').textContent = displayName;
+      
+      // Avatar chữ cái đầu đại diện
+      const initial = (displayName.trim().charAt(0) || 'S').toUpperCase();
+      document.getElementById('student-avatar-initial').textContent = initial;
+
+      // 3. Khôi phục tab từ URL Hash nếu có (#exams / #history)
+      const hash = window.location.hash.replace('#', '');
+      if (['exams', 'history'].includes(hash)) {
+        switchStudentTab(hash);
+      } else {
+        await loadAvailableExams();
+      }
+    });
+
+    /**
+     * Chuyển đổi giữa 2 module độc lập: Kỳ thi hiện có vs Lịch sử làm bài
+     */
+    function switchStudentTab(tab) {
+      // Bảo vệ: Nếu đang làm bài thi, không cho phép đổi tab gây mất tập trung
+      const runner = document.getElementById('exam-runner');
+      if (runner && runner.style.display === 'flex') {
+        showToast('Bạn đang làm bài thi. Vui lòng hoàn thành hoặc nộp bài trước khi chuyển trang.', 'warning');
+        return;
+      }
+
+      currentActiveTab = tab;
+      window.location.hash = tab;
+
+      const isExams = tab === 'exams';
+      document.getElementById('section-exams').style.display = isExams ? 'block' : 'none';
+      document.getElementById('section-history').style.display = isExams ? 'none' : 'block';
+
+      document.getElementById('menu-exams').classList.toggle('active', isExams);
+      document.getElementById('menu-history').classList.toggle('active', !isExams);
+
+      const breadcrumbModule = document.getElementById('breadcrumb-active-module');
+      if (isExams) {
+        breadcrumbModule.textContent = 'Kỳ thi hiện có';
+        loadAvailableExams();
+      } else {
+        breadcrumbModule.textContent = 'Lịch sử làm bài';
+        loadPastAttempts();
+      }
+    }
+
+    /**
+     * MODULE 1: Tải danh sách kỳ thi hiện có
+     */
+    async function loadAvailableExams() {
+      const container = document.getElementById('exams-list');
+      try {
+        const res = await API.get('/attempts/available-exams');
+        allRawExams = res.exams || [];
+
+        // Cập nhật banner thi dở nếu có
+        const activeFound = allRawExams.find(e => e.active_attempt_id);
+        const activeBanner = document.getElementById('active-banner');
+        if (activeFound) {
+          activeBanner.style.display = 'flex';
+          document.getElementById('active-banner-text').textContent = `Bài thi: "${activeFound.title}" đang diễn ra. Vui lòng hoàn thành trước khi hết thời gian.`;
+          document.getElementById('btn-resume-active').onclick = () => startOrResumeExam(activeFound.id);
+        } else {
+          activeBanner.style.display = 'none';
+        }
+
+        applyExamsFilter();
+      } catch (err) {
+        showToast(err.message || 'Không thể tải danh sách bài thi', 'error');
+        container.innerHTML = `<p style="color: var(--student-danger); grid-column: 1 / -1; padding: 2rem 0; text-align: center;">Lỗi tải dữ liệu: ${escapeHtml(err.message)}</p>`;
+      }
+    }
+
+    /**
+     * Áp dụng bộ lọc cho Module 1: Kỳ thi hiện có
+     */
+    function applyExamsFilter() {
+      const searchInput = document.getElementById('filter-exam-search');
+      const typeSelect = document.getElementById('filter-exam-type');
+      const statusSelect = document.getElementById('filter-exam-status');
+
+      const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+      const type = typeSelect ? typeSelect.value : 'all';
+      const status = statusSelect ? statusSelect.value : 'all';
+
+      const filtered = allRawExams.filter(e => {
+        // 1. Tìm theo tên bài thi hoặc tên giáo viên
+        const title = (e.title || '').toLowerCase();
+        const teacher = (e.teacher_name || '').toLowerCase();
+        const matchQuery = !query || title.includes(query) || teacher.includes(query);
+
+        // 2. Hình thức thi: Tự do vs Chỉ định
+        let matchType = true;
+        if (type === 'public') matchType = (e.access_type === 'public');
+        if (type === 'assigned') matchType = (e.access_type === 'assigned');
+
+        // 3. Trạng thái lượt thi: Còn lượt vs Đã hết lượt
+        let matchStatus = true;
+        const isUnlimited = e.max_attempts === 0;
+        const remaining = isUnlimited ? Infinity : (e.max_attempts - e.attempts_taken);
+        const canTake = isUnlimited || remaining > 0 || e.active_attempt_id !== null;
+        if (status === 'available') matchStatus = canTake;
+        if (status === 'exhausted') matchStatus = !canTake;
+
+        return matchQuery && matchType && matchStatus;
+      });
+
+      const countBadge = document.getElementById('exams-filter-count');
+      if (countBadge) {
+        countBadge.textContent = `${filtered.length} / ${allRawExams.length} kỳ thi`;
+      }
+
+      renderExamsList(filtered);
+    }
+
+    /**
+     * Đặt lại bộ lọc Module 1
+     */
+    function resetExamsFilter() {
+      const searchInput = document.getElementById('filter-exam-search');
+      const typeSelect = document.getElementById('filter-exam-type');
+      const statusSelect = document.getElementById('filter-exam-status');
+
+      if (searchInput) searchInput.value = '';
+      if (typeSelect) typeSelect.value = 'all';
+      if (statusSelect) statusSelect.value = 'all';
+
+      applyExamsFilter();
+    }
+
+    /**
+     * Render danh sách thẻ kỳ thi
+     */
+    function renderExamsList(exams) {
+      const container = document.getElementById('exams-list');
+      if (allRawExams.length === 0) {
+        container.innerHTML = '<p style="color: var(--student-text-muted); grid-column: 1 / -1; padding: 2rem 0; text-align: center;">Hiện chưa có bài thi nào được mở cho tài khoản của bạn.</p>';
+        return;
+      }
+
+      if (exams.length === 0) {
+        container.innerHTML = `
+          <div class="empty-filter-box">
+            <svg class="empty-filter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <div class="empty-filter-title">Không tìm thấy kỳ thi nào phù hợp</div>
+            <p class="empty-filter-desc">Vui lòng thử từ khóa khác hoặc điều chỉnh các tiêu chí lọc đã chọn.</p>
+            <button class="btn-filter-reset" onclick="resetExamsFilter()">Đặt lại bộ lọc</button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = exams.map(e => {
+        const isUnlimited = e.max_attempts === 0;
+        const remaining = isUnlimited ? Infinity : (e.max_attempts - e.attempts_taken);
+        const canTake = isUnlimited || remaining > 0 || e.active_attempt_id !== null;
+
+        const isPublic = e.access_type === 'public';
+        const badgeClass = isPublic ? 'badge-access-public' : 'badge-access-assigned';
+        const badgeText = isPublic ? 'TỰ DO' : 'CHỈ ĐỊNH';
+
+        let actionBtnHtml = '';
+        if (e.active_attempt_id) {
+          actionBtnHtml = `<button class="btn-exam-action btn-resume" onclick="startOrResumeExam(${e.id})">Tiếp tục thi dở</button>`;
+        } else if (canTake) {
+          actionBtnHtml = `<button class="btn-exam-action btn-start" onclick="startOrResumeExam(${e.id})">Bắt đầu làm bài</button>`;
+        } else {
+          actionBtnHtml = `<button class="btn-exam-action btn-disabled" disabled>Hết lượt thi</button>`;
+        }
+
+        return `
+          <div class="exam-item-card">
+            <div>
+              <div class="exam-card-top">
+                <span class="${badgeClass}">${badgeText}</span>
+                <span class="exam-duration-text">Thời gian: ${e.duration_minutes} phút</span>
+              </div>
+              <h3 class="exam-title-text">${escapeHtml(e.title)}</h3>
+              <p class="exam-desc-text">
+                ${escapeHtml(e.description || 'Không có mô tả')}
+              </p>
+            </div>
+            <div>
+              <div class="exam-meta-block">
+                <div>Giáo viên: <strong>${escapeHtml(e.teacher_name || 'Hệ Thống')}</strong></div>
+                <div>Số lần thi: <strong>${e.attempts_taken} / ${isUnlimited ? '∞' : e.max_attempts}</strong> (Điểm đạt: ${e.pass_score}/10)</div>
+              </div>
+              ${actionBtnHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /**
+     * MODULE 2: Tải lịch sử làm bài & kết quả
+     */
+    async function loadPastAttempts() {
+      const tbody = document.getElementById('attempts-tbody');
+      try {
+        const res = await API.get('/attempts/my-attempts');
+        allRawAttempts = res.attempts || [];
+        applyHistoryFilter();
+      } catch (err) {
+        showToast(err.message || 'Không thể tải lịch sử làm bài', 'error');
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--student-danger); padding: 2.5rem;">Lỗi tải lịch sử: ${escapeHtml(err.message)}</td></tr>`;
+      }
+    }
+
+    /**
+     * Áp dụng bộ lọc cho Module 2: Lịch sử làm bài
+     */
+    function applyHistoryFilter() {
+      const searchInput = document.getElementById('filter-history-search');
+      const statusSelect = document.getElementById('filter-history-status');
+
+      const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+      const status = statusSelect ? statusSelect.value : 'all';
+
+      const filtered = allRawAttempts.filter(a => {
+        // 1. Tìm theo tên kỳ thi
+        const title = (a.exam_title || '').toLowerCase();
+        const matchQuery = !query || title.includes(query);
+
+        // 2. Trạng thái bài thi: Hoàn thành, Hết giờ, Đang làm
+        let matchStatus = true;
+        if (status === 'completed') matchStatus = (a.status === 'completed');
+        if (status === 'expired') matchStatus = (a.status === 'expired');
+        if (status === 'in_progress') matchStatus = (a.status === 'in_progress');
+
+        return matchQuery && matchStatus;
+      });
+
+      const countBadge = document.getElementById('history-filter-count');
+      if (countBadge) {
+        countBadge.textContent = `${filtered.length} / ${allRawAttempts.length} lần thi`;
+      }
+
+      renderAttemptsList(filtered);
+    }
+
+    /**
+     * Đặt lại bộ lọc Module 2
+     */
+    function resetHistoryFilter() {
+      const searchInput = document.getElementById('filter-history-search');
+      const statusSelect = document.getElementById('filter-history-status');
+
+      if (searchInput) searchInput.value = '';
+      if (statusSelect) statusSelect.value = 'all';
+
+      applyHistoryFilter();
+    }
+
+    /**
+     * Render bảng lịch sử thi
+     */
+    function renderAttemptsList(attempts) {
+      const tbody = document.getElementById('attempts-tbody');
+      if (allRawAttempts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--student-text-muted); padding: 3rem 1rem;">Bạn chưa thực hiện bài thi nào.</td></tr>';
+        return;
+      }
+
+      if (attempts.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 3rem 1.5rem;">
+              <div style="font-weight: 700; color: var(--student-navy); margin-bottom: 0.35rem; font-size: 0.95rem;">Không tìm thấy lần thi nào phù hợp</div>
+              <div style="color: var(--student-text-muted); font-size: 0.85rem; margin-bottom: 1.15rem;">Vui lòng thử từ khóa khác hoặc điều chỉnh trạng thái lọc.</div>
+              <button class="btn-filter-reset" onclick="resetHistoryFilter()" style="margin: 0 auto;">Đặt lại bộ lọc</button>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = attempts.map(a => {
+        let statusBadge = '<span class="badge-status badge-status-completed">HOÀN THÀNH</span>';
+        if (a.status === 'in_progress') {
+          statusBadge = '<span class="badge-status badge-status-progress">ĐANG LÀM</span>';
+        } else if (a.status === 'expired') {
+          statusBadge = '<span class="badge-status badge-status-expired">HẾT GIỜ</span>';
+        }
+
+        // Privacy Gate: Chỉ hiển thị điểm khi giáo viên đã công bố điểm
+        let scoreDisplay = '';
+        if (a.score !== null && a.score !== undefined) {
+          scoreDisplay = `<strong>${parseFloat(a.score).toFixed(2)}</strong> / 10`;
+        } else {
+          scoreDisplay = '<span style="color: var(--student-text-muted); font-size: 0.85rem;">Chưa công bố</span>';
+        }
+
+        const formattedTime = formatTimestampVN(a.started_at);
+
+        return `
+          <tr>
+            <td class="history-exam-title">${escapeHtml(a.exam_title)}</td>
+            <td class="history-attempt-num">Lần ${a.attempt_number}</td>
+            <td>${statusBadge}</td>
+            <td class="history-score-val">${scoreDisplay}</td>
+            <td class="history-time-text">${formattedTime}</td>
+            <td style="text-align: center;">
+              <button class="btn-action-view" onclick="viewAttemptResult(${a.id})">Xem kết quả</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    /**
+     * Bắt đầu hoặc tiếp tục bài thi
+     */
+    async function startOrResumeExam(examId) {
+      try {
+        const res = await API.post('/attempts/start', { examId });
+        currentExamData = res;
+        activeAttemptId = res.attemptId;
+
+        // Điền câu trả lời đã lưu từ server
+        draftAnswersMap = {};
+        (res.answers || []).forEach(a => {
+          draftAnswersMap[a.question_id] = a.selected_choice_ids || [];
+        });
+
+        // Khôi phục bộ nhớ đệm cục bộ nếu có
+        try {
+          const localSaved = localStorage.getItem(`quiz_attempt_${activeAttemptId}`);
+          if (localSaved) {
+            const parsed = JSON.parse(localSaved);
+            Object.assign(draftAnswersMap, parsed);
+          }
+        } catch (e) {
+          console.warn('LocalStorage draft recovery skipped:', e);
+        }
+
+        openRunner();
+      } catch (err) {
+        showToast(err.message || 'Không thể bắt đầu bài thi', 'error');
+      }
+    }
+
+    function openRunner() {
+      document.getElementById('exam-runner').style.display = 'flex';
+      document.getElementById('runner-exam-title').textContent = currentExamData.examTitle;
+      document.getElementById('runner-attempt-info').textContent = `Lần thi: ${currentExamData.attemptNumber} | Điểm câu hỏi theo trọng số`;
+
+      startTimer(new Date(currentExamData.deadlineAt));
+      renderPalette();
+      showQuestion(0);
+    }
+
+    function startTimer(deadlineDate) {
+      if (timerInterval) clearInterval(timerInterval);
+
+      function update() {
+        const now = new Date();
+        const diffMs = deadlineDate.getTime() - now.getTime();
+
+        if (diffMs <= 0) {
+          clearInterval(timerInterval);
+          document.getElementById('countdown-timer').textContent = '00:00';
+          showToast('Hết giờ làm bài! Hệ thống đang tự động nộp bài...', 'warning');
+          submitAttemptAuto();
+          return;
+        }
+
+        const totalSec = Math.floor(diffMs / 1000);
+        const mins = Math.floor(totalSec / 60);
+        const secs = totalSec % 60;
+        document.getElementById('countdown-timer').textContent =
+          `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      }
+
+      update();
+      timerInterval = setInterval(update, 1000);
+    }
+
+    function renderPalette() {
+      const palette = document.getElementById('question-palette');
+      const questions = currentExamData.questions || [];
+
+      palette.innerHTML = questions.map((q, idx) => {
+        const isAnswered = draftAnswersMap[q.question_id] && draftAnswersMap[q.question_id].length > 0;
+        const isCurrent = idx === currentQuestionIndex;
+        let classes = 'palette-btn';
+        if (isAnswered) classes += ' answered';
+        if (isCurrent) classes += ' current';
+
+        return `<button class="${classes}" onclick="showQuestion(${idx})">${idx + 1}</button>`;
+      }).join('');
+    }
+
+    function showQuestion(index) {
+      const questions = currentExamData.questions;
+      if (index < 0 || index >= questions.length) return;
+
+      currentQuestionIndex = index;
+      const q = questions[index];
+
+      document.getElementById('q-number-badge').textContent = `Câu ${index + 1} / ${questions.length} (Trọng số: ${q.weight})`;
+      document.getElementById('q-type-badge').textContent = q.question_type === 'single_choice' ? 'Chọn 1 đáp án' : 'Chọn nhiều đáp án';
+      document.getElementById('q-title').textContent = q.title;
+      document.getElementById('q-content').textContent = q.content;
+
+      const selectedChoices = draftAnswersMap[q.question_id] || [];
+      const isSingle = q.question_type === 'single_choice';
+
+      const container = document.getElementById('q-choices-container');
+      container.innerHTML = (q.choices || []).map(c => {
+        const isChecked = selectedChoices.includes(c.id);
+        return `
+          <label class="choice-label ${isChecked ? 'selected' : ''}" onclick="toggleChoice(${q.question_id}, ${c.id}, ${isSingle})">
+            <input type="${isSingle ? 'radio' : 'checkbox'}" name="choice_group_${q.question_id}" value="${c.id}" ${isChecked ? 'checked' : ''} style="margin-top: 0.2rem;">
+            <span style="font-size: 0.95rem;">${escapeHtml(c.content)}</span>
+          </label>
+        `;
+      }).join('');
+
+      document.getElementById('btn-prev-q').disabled = (index === 0);
+      document.getElementById('btn-next-q').disabled = (index === questions.length - 1);
+
+      renderPalette();
+    }
+
+    function toggleChoice(questionId, choiceId, isSingle) {
+      if (!draftAnswersMap[questionId]) draftAnswersMap[questionId] = [];
+
+      if (isSingle) {
+        draftAnswersMap[questionId] = [choiceId];
+      } else {
+        const idx = draftAnswersMap[questionId].indexOf(choiceId);
+        if (idx > -1) {
+          draftAnswersMap[questionId].splice(idx, 1);
+        } else {
+          draftAnswersMap[questionId].push(choiceId);
+        }
+      }
+
+      // Bộ đệm cục bộ LocalStorage
+      if (activeAttemptId) {
+        try {
+          localStorage.setItem(`quiz_attempt_${activeAttemptId}`, JSON.stringify(draftAnswersMap));
+        } catch (e) {
+          console.warn('LocalStorage unavailable for local buffering:', e);
+        }
+      }
+
+      showQuestion(currentQuestionIndex);
+      autoSaveDraft(questionId);
+    }
+
+    function updateSaveIndicator(state, detail = '') {
+      const indicator = document.getElementById('save-indicator');
+      if (!indicator) return;
+      if (state === 'SAVING') {
+        indicator.innerHTML = `<span style="background: #E0F2FE; color: #0369A1; padding: 0.2rem 0.5rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; font-weight: 500;">🔄 Đang lưu...</span>`;
+      } else if (state === 'SAVED') {
+        const ackTime = detail || new Date().toLocaleTimeString('vi-VN');
+        indicator.innerHTML = `<span style="background: #D1FAE5; color: #065F46; padding: 0.2rem 0.5rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; font-weight: 500;">✓ Đã lưu trên máy chủ [${ackTime}]</span>`;
+      } else if (state === 'FAILED') {
+        indicator.innerHTML = `<span style="background: #FEE2E2; color: #991B1B; padding: 0.2rem 0.5rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; font-weight: 500;">⚠ Lưu thất bại (đã đệm cục bộ)</span>`;
+      } else if (state === 'OFFLINE') {
+        indicator.innerHTML = `<span style="background: #FEF3C7; color: #92400E; padding: 0.2rem 0.5rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; font-weight: 500;">📶 Mất kết nối (đã đệm an toàn)</span>`;
+      }
+    }
+
+    let autoSaveTimeout = null;
+    let pendingSaveQid = null;
+
+    async function flushPendingSave() {
+      if (autoSaveTimeout && pendingSaveQid !== null) {
+        clearTimeout(autoSaveTimeout);
+        autoSaveTimeout = null;
+        const qid = pendingSaveQid;
+        pendingSaveQid = null;
+        await executeDraftSave(qid);
+      }
+    }
+
+    async function executeDraftSave(questionId) {
+      if (!navigator.onLine) {
+        updateSaveIndicator('OFFLINE');
+        return;
+      }
+
+      const currentRev = (questionRevisions[questionId] || 1);
+      updateSaveIndicator('SAVING');
+      const reqId = `req_draft_${activeAttemptId}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+      try {
+        const payload = [{
+          question_id: questionId,
+          selected_choice_ids: draftAnswersMap[questionId] || [],
+          revision: currentRev
+        }];
+        const res = await API.post(
+          `/attempts/${activeAttemptId}/draft`,
+          { answers: payload, requestId: reqId },
+          { 'X-Request-Id': reqId }
+        );
+        const ackTime = res.serverTime ? new Date(res.serverTime).toLocaleTimeString('vi-VN') : new Date().toLocaleTimeString('vi-VN');
+        updateSaveIndicator('SAVED', ackTime);
+      } catch (err) {
+        updateSaveIndicator('FAILED');
+      }
+    }
+
+    const questionRevisions = {};
+
+    function autoSaveDraft(questionId) {
+      if (!navigator.onLine) {
+        updateSaveIndicator('OFFLINE');
+        return;
+      }
+
+      questionRevisions[questionId] = (questionRevisions[questionId] || 0) + 1;
+      updateSaveIndicator('SAVING');
+      pendingSaveQid = questionId;
+
+      if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
+      autoSaveTimeout = setTimeout(async () => {
+        autoSaveTimeout = null;
+        const qid = pendingSaveQid;
+        pendingSaveQid = null;
+        if (qid !== null) {
+          await executeDraftSave(qid);
+        }
+      }, 500);
+    }
+
+    // Tự động đồng bộ lại khi kết nối internet được khôi phục
+    window.addEventListener('online', async () => {
+      if (activeAttemptId && Object.keys(draftAnswersMap).length > 0) {
+        updateSaveIndicator('SAVING');
+        try {
+          const payload = Object.keys(draftAnswersMap).map(qid => ({
+            question_id: parseInt(qid, 10),
+            selected_choice_ids: draftAnswersMap[qid] || [],
+            revision: questionRevisions[qid] || 1
+          }));
+          const reqId = `req_reconnect_${activeAttemptId}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+          const res = await API.post(
+            `/attempts/${activeAttemptId}/draft`,
+            { answers: payload, requestId: reqId },
+            { 'X-Request-Id': reqId }
+          );
+          const ackTime = res.serverTime ? new Date(res.serverTime).toLocaleTimeString('vi-VN') : new Date().toLocaleTimeString('vi-VN');
+          updateSaveIndicator('SAVED', ackTime);
+          showToast('Kết nối internet đã khôi phục. Đã đồng bộ bài làm thành công!', 'success');
+        } catch (e) {
+          updateSaveIndicator('FAILED');
+        }
+      }
+    });
+
+    window.addEventListener('offline', () => {
+      updateSaveIndicator('OFFLINE');
+      showToast('Mất kết nối mạng! Câu trả lời vẫn được đệm an toàn trên trình duyệt.', 'warning');
+    });
+
+    window.addEventListener('beforeunload', (e) => {
+      if (activeAttemptId && (autoSaveTimeout !== null || pendingSaveQid !== null)) {
+        e.preventDefault();
+        e.returnValue = 'Bài làm của bạn đang trong quá trình đồng bộ lên máy chủ. Bạn có chắc chắn muốn rời đi?';
+        return e.returnValue;
+      }
+    });
+
+    async function navigateQuestion(delta) {
+      await flushPendingSave();
+      showQuestion(currentQuestionIndex + delta);
+    }
+
+    async function confirmSubmit() {
+      await flushPendingSave();
+      const questions = currentExamData.questions;
+      const unanswered = questions.filter(q => !draftAnswersMap[q.question_id] || draftAnswersMap[q.question_id].length === 0).length;
+
+      let msg = 'Bạn có chắc chắn muốn nộp bài thi?';
+      if (unanswered > 0) {
+        msg = `Bạn còn ${unanswered} câu chưa trả lời. Bạn vẫn muốn nộp bài chứ?`;
+      }
+
+      if (confirm(msg)) {
+        await submitAttemptAuto();
+      }
+    }
+
+    let submitRequestId = null;
+    async function submitAttemptAuto() {
+      await flushPendingSave();
+      clearInterval(timerInterval);
+      try {
+        const finalAnswers = Object.keys(draftAnswersMap).map(qid => ({
+          question_id: parseInt(qid, 10),
+          selected_choice_ids: draftAnswersMap[qid]
+        }));
+
+        if (!submitRequestId) {
+          submitRequestId = `req_sub_${activeAttemptId}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+        }
+
+        const res = await API.post(
+          `/attempts/${activeAttemptId}/submit`,
+          { answers: finalAnswers, requestId: submitRequestId },
+          { 'X-Request-Id': submitRequestId }
+        );
+        showToast('Đã nộp bài thành công!', 'success');
+
+        try {
+          localStorage.removeItem(`quiz_attempt_${activeAttemptId}`);
+        } catch (e) {}
+
+        const completedAttemptId = activeAttemptId;
+        submitRequestId = null;
+        activeAttemptId = null;
+        document.getElementById('exam-runner').style.display = 'none';
+
+        // Tải lại danh sách kỳ thi và lịch sử
+        await loadAvailableExams();
+        await loadPastAttempts();
+
+        // Mở kết quả bài thi vừa hoàn thành
+        viewAttemptResult(completedAttemptId);
+      } catch (err) {
+        showToast(err.message || 'Lỗi khi nộp bài thi', 'error');
+      }
+    }
+
+    /**
+     * Xem kết quả bài thi (Tuân thủ Privacy Gate)
+     */
+    async function viewAttemptResult(attemptId) {
+      try {
+        const res = await API.get(`/attempts/${attemptId}/result`);
+        const r = res.result || res;
+        const modal = document.getElementById('result-modal');
+        const content = document.getElementById('result-content');
+
+        let scoreBadge = '';
+        if (r.score !== null && r.score !== undefined) {
+          const passed = r.score >= r.passScore;
+          scoreBadge = `
+            <div style="background: ${passed ? '#DCFCE7' : '#FEE2E2'}; border: 1px solid ${passed ? '#86EFAC' : '#FCA5A5'}; border-radius: 10px; padding: 1.25rem; text-align: center; margin-bottom: 1.5rem;">
+              <div style="font-size: 2.2rem; font-weight: 800; color: ${passed ? '#15803D' : '#DC2626'};">
+                ${parseFloat(r.score).toFixed(2)} / 10.00
+              </div>
+              <div style="font-size: 0.95rem; font-weight: 700; color: ${passed ? '#15803D' : '#DC2626'};">
+                ${passed ? 'ĐẠT (ĐÃ QUA MÔN)' : 'CHƯA ĐẠT'}
+              </div>
+              <div style="font-size: 0.8rem; color: #64748B; margin-top: 0.35rem;">
+                Điểm sàn yêu cầu: ${r.passScore}/10 | Điểm thô: ${r.rawScore}
+              </div>
+            </div>
+          `;
+        } else {
+          scoreBadge = `
+            <div style="background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 1rem; text-align: center; margin-bottom: 1.5rem; color: #92400E; font-weight: 600;">
+              ${escapeHtml(r.scoreMessage || 'Điểm số chưa được giáo viên công bố.')}
+            </div>
+          `;
+        }
+
+        let questionsHtml = '';
+        if (r.questions && r.questions.length > 0) {
+          questionsHtml = `
+            <h4 style="margin: 1.5rem 0 0.75rem 0; font-size: 1.05rem; color: var(--student-navy);">Chi Tiết Từng Câu Hỏi</h4>
+            ${r.questions.map((q, idx) => {
+              const isQCorrect = q.isCorrect === true || q.is_correct === true || q.is_correct === 1;
+              const scoreVal = q.scoreAwarded !== undefined ? q.scoreAwarded : (q.score_awarded !== undefined ? q.score_awarded : 0);
+              const selIds = q.selectedChoiceIds || q.selected_choice_ids || [];
+              return `
+              <div style="border: 1px solid ${isQCorrect ? '#BBF7D0' : '#FECACA'}; background: ${isQCorrect ? '#F0FDF4' : '#FEF2F2'}; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                  <strong style="color: var(--student-navy);">Câu ${idx + 1}: ${escapeHtml(q.title)}</strong>
+                  <span class="badge-status ${isQCorrect ? 'badge-status-completed' : 'badge-status-expired'}">
+                    ${isQCorrect ? `Đúng (+${scoreVal})` : `Sai (0 điểm)`}
+                  </span>
+                </div>
+                <p style="font-size: 0.9rem; margin-bottom: 0.75rem; color: #334155;">${escapeHtml(q.content)}</p>
+                <div style="font-size: 0.85rem;">
+                  ${(q.choices || []).map(c => {
+                    const studentSelected = Array.isArray(selIds) && selIds.includes(c.id);
+                    const isChoiceCorrect = c.isCorrect === true || c.is_correct === true || c.is_correct === 1;
+                    let choiceStyle = 'padding: 0.4rem 0.75rem; border-radius: 6px; margin-bottom: 0.35rem; display: flex; justify-content: space-between; align-items: center;';
+                    if (isChoiceCorrect) choiceStyle += ' background: #DCFCE7; font-weight: 600; color: #166534;';
+                    else if (studentSelected && !isChoiceCorrect) choiceStyle += ' background: #FEE2E2; color: #991B1B;';
+                    else choiceStyle += ' background: #F8FAFC; color: #64748B;';
+
+                    return `
+                      <div style="${choiceStyle}">
+                        <span>${studentSelected ? '👉 ' : ''}${escapeHtml(c.content)}</span>
+                        <span>${isChoiceCorrect ? '✓ Đáp án đúng' : (studentSelected ? '✗ Bạn đã chọn' : '')}</span>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+              `;
+            }).join('')}
+          `;
+        } else {
+          questionsHtml = `
+            <div style="background: #F1F5F9; border-radius: 8px; padding: 1rem; text-align: center; color: #64748B; font-size: 0.875rem;">
+              ${escapeHtml(r.answersMessage || 'Đáp án chi tiết chưa được giáo viên công bố.')}
+            </div>
+          `;
+        }
+
+        content.innerHTML = `
+          <div style="margin-bottom: 1rem;">
+            <h4 style="font-size: 1.15rem; color: var(--student-navy); margin-bottom: 0.25rem;">${escapeHtml(r.examTitle)}</h4>
+            <span style="font-size: 0.85rem; color: #64748B;">
+              Thí sinh: <strong>${escapeHtml(r.studentName)}</strong> | Lần thi: <strong>${r.attemptNumber}</strong> |
+              Bắt đầu: ${formatTimestampVN(r.startedAt)}
+            </span>
+          </div>
+          ${scoreBadge}
+          ${questionsHtml}
+        `;
+
+        modal.classList.add('open');
+      } catch (err) {
+        showToast(err.message || 'Không thể xem kết quả bài thi', 'error');
+      }
+    }
+
+    function closeResultModal() {
+      document.getElementById('result-modal').classList.remove('open');
+    }
+
+    /**
+     * Định dạng thời gian chuẩn Việt Nam: HH:mm:ss DD/MM/YYYY
+     */
+    function formatTimestampVN(dateStr) {
+      if (!dateStr) return '-';
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      const seconds = String(d.getSeconds()).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${hours}:${minutes}:${seconds} ${day}/${month}/${year}`;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+  </script>
+</body>
+</html>

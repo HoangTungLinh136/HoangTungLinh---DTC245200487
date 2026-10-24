@@ -1,0 +1,1349 @@
+/* ==========================================================================
+   QuizSystem — Teacher Portal Stylesheet (Modern Dashboard Design)
+   Đề tài 35 - Hệ thống Quiz/Thi trắc nghiệm
+   ========================================================================== */
+
+:root {
+  --teacher-primary: #0866F5;
+  --teacher-primary-hover: #0052CC;
+  --teacher-primary-light: #EAF4FF;
+  --teacher-navy: #0B2463;
+  --teacher-bg: #F5F9FF;
+  --teacher-card-bg: #FFFFFF;
+  --teacher-border: #D6E5FA;
+  --teacher-border-subtle: #E2E8F0;
+  --teacher-text-main: #1E293B;
+  --teacher-text-body: #334155;
+  --teacher-text-muted: #64748B;
+  --teacher-text-light: #94A3B8;
+
+  --teacher-success: #16A34A;
+  --teacher-success-bg: #DCFCE7;
+  --teacher-danger: #DC2626;
+  --teacher-danger-bg: #FEE2E2;
+  --teacher-warning: #D97706;
+  --teacher-warning-bg: #FEF3C7;
+
+  --teacher-radius-sm: 6px;
+  --teacher-radius-md: 10px;
+  --teacher-radius-lg: 14px;
+  --teacher-shadow: 0 4px 16px -2px rgba(11, 36, 99, 0.05);
+  --teacher-card-hover: 0 8px 24px -4px rgba(8, 102, 245, 0.12);
+  --teacher-font: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body.teacher-body {
+  background-color: var(--teacher-bg);
+  color: var(--teacher-text-body);
+  font-family: var(--teacher-font);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==========================================================================
+   1. TEACHER HEADER (MATCHES APPROVED REFERENCE IMAGES 1 & 2)
+   ========================================================================== */
+.teacher-header {
+  width: 100%;
+  height: 64px;
+  background-color: #FFFFFF;
+  border-bottom: 1px solid var(--teacher-border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+}
+
+.teacher-header-inner {
+  width: 100%;
+  padding: 0 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.teacher-brand-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+}
+
+.teacher-brand-logo {
+  width: 32px;
+  height: 32px;
+  color: var(--teacher-primary);
+  flex-shrink: 0;
+}
+
+.teacher-brand-name {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--teacher-navy);
+  letter-spacing: -0.02em;
+}
+
+.teacher-portal-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  background-color: var(--teacher-primary-light);
+  color: var(--teacher-primary);
+  border: 1px solid #B8D7FC;
+  padding: 0.2rem 0.65rem;
+  border-radius: 9999px;
+  letter-spacing: 0.02em;
+}
+
+.teacher-user-group {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.teacher-user-info {
+  text-align: right;
+}
+
+.teacher-user-name {
+  font-size: 0.925rem;
+  font-weight: 700;
+  color: var(--teacher-navy);
+}
+
+.teacher-user-role {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--teacher-text-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.teacher-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--teacher-primary);
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Image 2 Reference Accurate Header Buttons */
+.teacher-header-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--teacher-radius-sm);
+  border: 1px solid var(--teacher-border);
+  background-color: #F5F9FF;
+  color: var(--teacher-navy);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.teacher-header-btn:hover {
+  background-color: var(--teacher-primary-light);
+  border-color: #B8D7FC;
+  color: var(--teacher-primary);
+}
+
+.teacher-header-btn svg {
+  width: 16px;
+  height: 16px;
+  color: var(--teacher-navy);
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.teacher-header-btn:hover svg {
+  color: var(--teacher-primary);
+}
+
+/* ==========================================================================
+   2. MAIN LAYOUT & SIDEBAR
+   ========================================================================== */
+.teacher-layout {
+  display: flex;
+  flex: 1;
+  min-height: calc(100vh - 64px);
+  background-color: var(--teacher-bg);
+}
+
+.teacher-sidebar {
+  width: 240px;
+  background-color: #FFFFFF;
+  border-right: 1px solid var(--teacher-border);
+  flex-shrink: 0;
+  padding: 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-section-title {
+  font-size: 0.925rem;
+  font-weight: 700;
+  color: var(--teacher-navy);
+  padding: 0 1.5rem 0.75rem 1.5rem;
+  letter-spacing: -0.01em;
+}
+
+.sidebar-menu {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  color: var(--teacher-text-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-left: 4px solid transparent;
+}
+
+.sidebar-nav-item:hover {
+  background-color: #F8FAFC;
+  color: var(--teacher-primary);
+}
+
+.sidebar-nav-item.active {
+  background-color: var(--teacher-primary-light);
+  color: var(--teacher-primary);
+  font-weight: 600;
+  border-left-color: var(--teacher-primary);
+  border-radius: 0 8px 8px 0;
+}
+
+.sidebar-nav-item svg {
+  width: 18px;
+  height: 18px;
+  color: currentColor;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   3. MAIN CONTENT & BREADCRUMB
+   ========================================================================== */
+.teacher-main {
+  flex: 1;
+  min-width: 0;
+  padding: 1.5rem 2rem 3rem;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.teacher-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--teacher-text-muted);
+  margin-bottom: 1.25rem;
+}
+
+.breadcrumb-home-icon {
+  width: 15px;
+  height: 15px;
+  color: var(--teacher-primary);
+  flex-shrink: 0;
+}
+
+.breadcrumb-sep {
+  color: #CBD5E1;
+  font-size: 0.75rem;
+}
+
+.breadcrumb-active {
+  color: var(--teacher-primary);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   4. CARDS & TITLE BARS
+   ========================================================================== */
+.teacher-card {
+  background-color: var(--teacher-card-bg);
+  border: 1px solid var(--teacher-border);
+  border-radius: var(--teacher-radius-lg);
+  box-shadow: var(--teacher-shadow);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.card-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.card-title-left {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.card-title-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--teacher-primary);
+  flex-shrink: 0;
+}
+
+.card-main-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--teacher-navy);
+  margin: 0;
+}
+
+.btn-primary-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.55rem 1.15rem;
+  border-radius: var(--teacher-radius-sm);
+  background-color: var(--teacher-primary);
+  color: #FFFFFF;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-primary-action:hover {
+  background-color: var(--teacher-primary-hover);
+}
+
+.btn-refresh-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--teacher-radius-sm);
+  background-color: #FFFFFF;
+  color: var(--teacher-navy);
+  border: 1px solid var(--teacher-border);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-refresh-sm:hover {
+  background-color: var(--teacher-primary-light);
+  border-color: #B8D7FC;
+  color: var(--teacher-primary);
+}
+
+.btn-refresh-sm svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ==========================================================================
+   5. FILTER TOOLBARS & CONTROLS
+   ========================================================================== */
+.teacher-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.filter-input-search {
+  height: 38px;
+  min-width: 170px;
+  max-width: 240px;
+  flex: 1 1 170px;
+  padding: 0 0.75rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: var(--teacher-text-main);
+  background-color: #FFFFFF;
+  border: 1px solid var(--teacher-border);
+  border-radius: var(--teacher-radius-sm);
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.filter-input-search:focus {
+  border-color: var(--teacher-primary);
+  box-shadow: 0 0 0 3px rgba(8, 102, 245, 0.12);
+}
+
+.filter-select {
+  height: 38px;
+  padding: 0 1.6rem 0 0.75rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--teacher-text-body);
+  background-color: #FFFFFF;
+  border: 1px solid var(--teacher-border);
+  border-radius: var(--teacher-radius-sm);
+  outline: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filter-select:focus {
+  border-color: var(--teacher-primary);
+  box-shadow: 0 0 0 3px rgba(8, 102, 245, 0.12);
+}
+
+/* Select Exam Result Bar (Module 3) */
+.exam-select-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 0.85rem 1rem;
+  background-color: #F8FAFC;
+  border: 1px solid var(--teacher-border);
+  border-radius: var(--teacher-radius-md);
+}
+
+.exam-select-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--teacher-navy);
+  white-space: nowrap;
+}
+
+.exam-select-dropdown {
+  height: 38px;
+  min-width: 280px;
+  max-width: 420px;
+  flex: 1;
+  padding: 0 1.75rem 0 0.85rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--teacher-text-main);
+  background-color: #FFFFFF;
+  border: 1px solid var(--teacher-border);
+  border-radius: var(--teacher-radius-sm);
+  outline: none;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   6. TABLES & DATA LISTS
+   ========================================================================== */
+.teacher-table-container {
+  overflow-x: auto;
+  border: 1px solid var(--teacher-border);
+  border-radius: var(--teacher-radius-md);
+  background-color: #FFFFFF;
+}
+
+.teacher-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.teacher-table th {
+  background-color: #F8FAFC;
+  color: var(--teacher-navy);
+  font-weight: 700;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--teacher-border);
+  white-space: nowrap;
+  font-size: 0.825rem;
+  letter-spacing: 0.02em;
+}
+
+.teacher-table td {
+  padding: 0.95rem 1rem;
+  border-bottom: 1px solid #F1F5F9;
+  color: var(--teacher-text-body);
+  vertical-align: middle;
+}
+
+.teacher-table tr:last-child td {
+  border-bottom: none;
+}
+
+.teacher-table tr:hover td {
+  background-color: #FBFDFF;
+}
+
+.col-id {
+  font-weight: 700;
+  color: var(--teacher-navy);
+  width: 60px;
+}
+
+.q-title-bold {
+  font-weight: 700;
+  color: var(--teacher-navy);
+  margin-bottom: 0.2rem;
+  display: block;
+}
+
+.q-desc-muted {
+  font-size: 0.8rem;
+  color: var(--teacher-text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 420px;
+  line-height: 1.35;
+}
+
+/* Badges */
+.badge-q-type {
+  display: inline-block;
+  font-size: 0.725rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  background-color: #FFFFFF;
+  border: 1px solid var(--teacher-border);
+  color: var(--teacher-navy);
+  white-space: nowrap;
+}
+
+.badge-diff-easy {
+  display: inline-block;
+  font-size: 0.725rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  background-color: var(--teacher-success-bg);
+  color: var(--teacher-success);
+  border: 1px solid #BBF7D0;
+}
+
+.badge-diff-medium {
+  display: inline-block;
+  font-size: 0.725rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  background-color: var(--teacher-warning-bg);
+  color: var(--teacher-warning);
+  border: 1px solid #FDE68A;
+}
+
+.badge-diff-hard {
+  display: inline-block;
+  font-size: 0.725rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  background-color: var(--teacher-danger-bg);
+  color: var(--teacher-danger);
+  border: 1px solid #FECACA;
+}
+
+.badge-access-public {
+  display: inline-block;
+  font-size: 0.725rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  background-color: #EAF4FF;
+  color: var(--teacher-primary);
+  border: 1px solid #B8D7FC;
+}
+
+.badge-access-assigned {
+  display: inline-block;
+  font-size: 0.725rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  background-color: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+}
+
+/* Action Buttons inside Tables */
+.btn-action-edit {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: var(--teacher-radius-sm);
+  background-color: #FFFFFF;
+  color: var(--teacher-text-body);
+  border: 1px solid var(--teacher-border);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-right: 0.35rem;
+}
+
+.btn-action-edit:hover {
+  background-color: var(--teacher-primary-light);
+  border-color: #B8D7FC;
+  color: var(--teacher-primary);
+}
+
+.btn-action-delete {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: var(--teacher-radius-sm);
+  background-color: var(--teacher-danger);
+  color: #FFFFFF;
+  border: 1px solid var(--teacher-danger);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-action-delete:hover {
+  background-color: #B91C1C;
+}
+
+.btn-action-clone {
+  padding: 0.38rem 0.85rem;
+  font-size: 0.825rem;
+  font-weight: 500;
+  border-radius: var(--teacher-radius-sm);
+  background-color: #FFFFFF;
+  color: var(--teacher-navy);
+  border: 1px solid var(--teacher-border);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-action-clone:hover {
+  background-color: var(--teacher-primary-light);
+  border-color: #B8D7FC;
+  color: var(--teacher-primary);
+}
+
+.btn-action-view {
+  padding: 0.38rem 0.85rem;
+  font-size: 0.825rem;
+  font-weight: 500;
+  border-radius: var(--teacher-radius-sm);
+  background-color: #FFFFFF;
+  color: var(--teacher-primary);
+  border: 1px solid #B8D7FC;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-action-view:hover {
+  background-color: var(--teacher-primary);
+  color: #FFFFFF;
+}
+
+/* Custom Checkbox in Tables */
+.teacher-table input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  cursor: pointer;
+  accent-color: var(--teacher-primary);
+}
+
+/* ==========================================================================
+   7. PAGINATION BAR (MATCHES APPROVED REFERENCE IMAGE 1)
+   ========================================================================== */
+.teacher-pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.pagination-info-text {
+  font-size: 0.85rem;
+  color: var(--teacher-text-muted);
+  font-weight: 500;
+}
+
+.pagination-controls-group {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.pagination-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.btn-page-num, .btn-page-arrow {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.825rem;
+  font-weight: 600;
+  border-radius: var(--teacher-radius-sm);
+  border: 1px solid var(--teacher-border);
+  background-color: #FFFFFF;
+  color: var(--teacher-navy);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-page-num:hover, .btn-page-arrow:hover:not(:disabled) {
+  background-color: var(--teacher-primary-light);
+  border-color: #B8D7FC;
+  color: var(--teacher-primary);
+}
+
+.btn-page-num.active {
+  background-color: var(--teacher-primary);
+  color: #FFFFFF;
+  border-color: var(--teacher-primary);
+}
+
+.btn-page-arrow:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background-color: #F8FAFC;
+}
+
+.page-size-select {
+  height: 32px;
+  padding: 0 0.5rem;
+  font-size: 0.825rem;
+  font-weight: 500;
+  color: var(--teacher-navy);
+  border: 1px solid var(--teacher-border);
+  border-radius: var(--teacher-radius-sm);
+  background-color: #FFFFFF;
+  outline: none;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   8. EMPTY STATES
+   ========================================================================== */
+.empty-state-card {
+  padding: 3.5rem 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-state-icon {
+  width: 48px;
+  height: 48px;
+  color: #CBD5E1;
+  margin-bottom: 0.75rem;
+}
+
+.empty-state-text {
+  font-size: 0.95rem;
+  color: var(--teacher-text-muted);
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   9. MODALS
+   ========================================================================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(11, 36, 99, 0.45);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-overlay.open {
+  display: flex;
+}
+
+.modal-box-card {
+  background-color: #FFFFFF;
+  border-radius: var(--teacher-radius-lg);
+  box-shadow: 0 20px 40px rgba(11, 36, 99, 0.2);
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid var(--teacher-border);
+  padding: 1.75rem;
+}
+
+.modal-box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--teacher-border);
+}
+
+.modal-box-header h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--teacher-navy);
+}
+
+.btn-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--teacher-text-muted);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.btn-modal-close:hover {
+  color: var(--teacher-danger);
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--teacher-navy);
+  margin-bottom: 0.35rem;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--teacher-text-main);
+  background-color: #FFFFFF;
+  border: 1px solid var(--teacher-border);
+  border-radius: var(--teacher-radius-sm);
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.form-control:focus {
+  border-color: var(--teacher-primary);
+  box-shadow: 0 0 0 3px rgba(8, 102, 245, 0.12);
+}
+
+/* ==========================================================================
+   10. RESPONSIVE DESIGN (3840px, 1920px, 1366px, 768px, 390px)
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .teacher-main {
+    padding: 1.25rem 1.25rem 2.5rem;
+  }
+}
+
+@media (max-width: 860px) {
+  .teacher-layout {
+    flex-direction: column;
+  }
+  .teacher-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--teacher-border);
+    padding: 0.75rem 0;
+  }
+  .sidebar-section-title {
+    padding: 0.25rem 1rem;
+  }
+  .sidebar-menu {
+    flex-direction: row;
+    padding: 0 1rem;
+    gap: 0.5rem;
+    overflow-x: auto;
+  }
+  .sidebar-nav-item {
+    padding: 0.5rem 1rem;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+  .sidebar-nav-item.active {
+    border-left: none;
+    border-bottom-color: var(--teacher-primary);
+    border-radius: 8px;
+  }
+}
+
+@media (max-width: 640px) {
+  .teacher-header-inner {
+    padding: 0 1rem;
+  }
+  .teacher-brand-name {
+    font-size: 1.15rem;
+  }
+  .teacher-portal-badge {
+    display: none;
+  }
+  .teacher-user-info {
+    display: none;
+  }
+  .teacher-header-btn span {
+    display: none;
+  }
+  .teacher-header-btn {
+    padding: 0.45rem;
+  }
+  .card-title-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .btn-primary-action {
+    align-self: flex-start;
+  }
+  .teacher-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filter-input-search, .filter-select, .teacher-filter-bar .btn-refresh-sm {
+    width: 100%;
+    max-width: 100%;
+    justify-content: center;
+  }
+  .exam-select-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .exam-select-dropdown {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* ==========================================================================
+   10. FILE UPLOAD & AZOTA PARSER STYLES (WORD / EXCEL IMPORT)
+   ========================================================================== */
+.modal-tab-switch {
+  display: flex;
+  background-color: #F1F5F9;
+  border-radius: var(--teacher-radius-sm);
+  padding: 3px;
+  gap: 4px;
+  margin-bottom: 1.25rem;
+}
+
+.modal-tab-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--teacher-text-muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--teacher-radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modal-tab-btn:hover {
+  color: var(--teacher-navy);
+}
+
+.modal-tab-btn.active {
+  background-color: #FFFFFF;
+  color: var(--teacher-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.modal-tab-btn svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Upload Dropzone */
+.upload-dropzone {
+  border: 2px dashed #B8D7FC;
+  background-color: #F8FAFD;
+  border-radius: var(--teacher-radius-md);
+  padding: 1.5rem 1.25rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.upload-dropzone:hover, .upload-dropzone.dragover {
+  border-color: var(--teacher-primary);
+  background-color: #EAF4FF;
+  transform: translateY(-1px);
+}
+
+.upload-dropzone-icon {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 0.65rem auto;
+  color: var(--teacher-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #FFFFFF;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(8, 102, 245, 0.12);
+}
+
+.upload-dropzone-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.upload-dropzone-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--teacher-navy);
+  margin-bottom: 0.25rem;
+}
+
+.upload-dropzone-subtitle {
+  font-size: 0.8rem;
+  color: var(--teacher-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.upload-formats-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.25rem 0.55rem;
+  border-radius: 4px;
+  background-color: #E2E8F0;
+  color: var(--teacher-text-body);
+}
+
+/* Sample Templates Bar */
+.sample-templates-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background-color: #F1F5F9;
+  border-radius: var(--teacher-radius-sm);
+  font-size: 0.8rem;
+}
+
+.sample-templates-label {
+  color: var(--teacher-text-muted);
+  font-weight: 500;
+}
+
+.sample-templates-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-sample-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid var(--teacher-border);
+  background-color: #FFFFFF;
+  color: var(--teacher-navy);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.btn-sample-download:hover {
+  background-color: var(--teacher-primary-light);
+  border-color: #B8D7FC;
+  color: var(--teacher-primary);
+}
+
+.btn-sample-download svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Parsed Summary Box */
+.file-summary-card {
+  background-color: #F8FAFD;
+  border: 1px solid var(--teacher-border);
+  border-radius: var(--teacher-radius-sm);
+  padding: 0.85rem 1rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.file-summary-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.file-summary-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  background-color: var(--teacher-primary-light);
+  color: var(--teacher-primary);
+}
+
+.file-summary-badge.success {
+  background-color: var(--teacher-success-bg);
+  color: var(--teacher-success);
+}
+
+.file-summary-badge.danger {
+  background-color: var(--teacher-danger-bg);
+  color: var(--teacher-danger);
+}
+
+/* Parsed Questions Scrollable Container */
+.parsed-questions-scroll {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid var(--teacher-border);
+  border-radius: var(--teacher-radius-sm);
+  background-color: #FFFFFF;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.parsed-q-item {
+  border: 1px solid var(--teacher-border-subtle);
+  border-radius: 6px;
+  padding: 0.75rem;
+  background-color: #FAFCFF;
+  transition: all 0.15s ease;
+}
+
+.parsed-q-item:hover {
+  border-color: #B8D7FC;
+  box-shadow: 0 2px 6px rgba(8, 102, 245, 0.05);
+}
+
+.parsed-q-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+}
+
+.parsed-q-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--teacher-navy);
+}
+
+.parsed-q-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.parsed-q-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.parsed-choice-pill {
+  font-size: 0.78rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 4px;
+  border: 1px solid #E2E8F0;
+  background-color: #FFFFFF;
+  color: var(--teacher-text-body);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.parsed-choice-pill.correct {
+  background-color: #DCFCE7;
+  border-color: #86EFAC;
+  color: #166534;
+  font-weight: 600;
+}
+
+/* Exam Question Source Selector Tabs */
+.exam-q-source-tabs {
+  display: flex;
+  background-color: #F1F5F9;
+  border-radius: var(--teacher-radius-sm);
+  padding: 3px;
+  gap: 4px;
+  margin-bottom: 0.85rem;
+}
+
+.source-tab-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--teacher-text-muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--teacher-radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.source-tab-btn:hover {
+  color: var(--teacher-navy);
+}
+
+.source-tab-btn.active {
+  background-color: #FFFFFF;
+  color: var(--teacher-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.source-tab-btn svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   11. GLOBAL TOAST NOTIFICATIONS (TOP-RIGHT)
+   ========================================================================== */
+.toast-container {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.5rem;
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  pointer-events: none;
+  max-width: 420px;
+}
+
+.toast {
+  pointer-events: auto;
+  padding: 0.85rem 1.15rem;
+  border-radius: var(--teacher-radius-md, 10px);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #FFFFFF;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  animation: toastSlideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  word-break: break-word;
+}
+
+.toast-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.toast-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+}
+
+.toast-msg {
+  flex: 1;
+}
+
+.toast-close {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.25rem;
+  margin-left: 0.5rem;
+  border-radius: 4px;
+  transition: color 0.15s ease, background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.toast-close:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.toast.toast-success, .toast-success { background: #10B981; }
+.toast.toast-error, .toast-error { background: #EF4444; }
+.toast.toast-warning, .toast-warning { background: #F59E0B; }
+.toast.toast-info, .toast-info { background: #0866F5; }
+
+@keyframes toastSlideInRight {
+  from { transform: translateX(120%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}

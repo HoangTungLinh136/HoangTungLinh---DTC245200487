@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuizSystem — Cổng Quản Trị Hệ Thống (Admin)</title>
+  <meta name="description" content="QuizSystem Admin Portal — Quản lý người dùng, Thống kê hệ thống và Nhật ký kiểm toán (Đề tài 35).">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Core App Styles & Dedicated Admin Styles -->
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="admin-body">
+
+  <!-- ========================================================================
+       1. HEADER — Thanh điều hướng chuẩn tham chiếu
+       ======================================================================== -->
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <!-- Bên trái: Logo + QuizSystem + Badge Admin Portal -->
+      <a href="/admin.html" class="admin-brand-group" title="QuizSystem — Quản trị hệ thống">
+        <svg class="admin-brand-logo" viewBox="0 0 36 36" fill="currentColor">
+          <path d="M18 4L2 12L18 20L31 13.5V23H33V12L18 4Z" />
+          <path d="M7 17.5V24C7 27.5 11.9 30 18 30C24.1 30 29 27.5 29 24V17.5L18 23L7 17.5Z" />
+        </svg>
+        <span class="admin-brand-name">QuizSystem</span>
+        <span class="admin-portal-badge">Admin Portal</span>
+      </a>
+
+      <!-- Bên phải: Thông tin Quản trị viên + Avatar + Nút Đổi MK & Đăng Xuất -->
+      <div class="admin-user-group">
+        <div class="admin-user-info">
+          <div class="admin-user-name" id="admin-display-name">Quan Tri Vien He Thong</div>
+          <div class="admin-user-role">SYSTEM ADMINISTRATOR</div>
+        </div>
+
+        <div class="admin-avatar" id="admin-avatar-initial" title="Quản Trị Viên">A</div>
+
+        <button class="admin-header-btn" onclick="API.openChangePasswordModal()" title="Đổi mật khẩu tài khoản quản trị">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+          <span>Đổi Mật Khẩu</span>
+        </button>
+
+        <button class="admin-header-btn btn-logout" onclick="API.logout()" title="Đăng xuất khỏi hệ thống">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          <span>Đăng Xuất</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       2. MAIN LAYOUT (SIDEBAR + MAIN CONTENT)
+       ======================================================================== -->
+  <div class="admin-layout">
+    <!-- Sidebar bên trái -->
+    <aside class="admin-sidebar" aria-label="Menu quản trị hệ thống">
+      <div class="sidebar-title">Quản trị hệ thống</div>
+      <ul class="sidebar-menu">
+        <li class="sidebar-item">
+          <a class="sidebar-link active" id="menu-users" onclick="switchAdminTab('users')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>Quản lý người dùng</span>
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a class="sidebar-link" id="menu-stats" onclick="switchAdminTab('stats')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            <span>Thống kê hệ thống</span>
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a class="sidebar-link" id="menu-audit" onclick="switchAdminTab('audit')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span>Nhật ký kiểm toán</span>
+          </a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main Content bên phải -->
+    <main class="admin-main">
+      <!-- Breadcrumb -->
+      <nav class="admin-breadcrumb" aria-label="Đường dẫn điều hướng">
+        <span class="breadcrumb-home-icon">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+          </svg>
+        </span>
+        <span class="breadcrumb-sep">&gt;</span>
+        <a class="breadcrumb-link" onclick="switchAdminTab('users')">Quản trị hệ thống</a>
+        <span class="breadcrumb-sep">&gt;</span>
+        <span class="breadcrumb-current" id="breadcrumb-active-title">Quản lý người dùng</span>
+      </nav>
+
+      <!-- ====================================================================
+           SECTION 1: ADM-01 — QUẢN LÝ NGƯỜI DÙNG
+           ==================================================================== -->
+      <section id="section-users" class="admin-section">
+        <div class="admin-card">
+          <!-- Card Title & Actions -->
+          <div class="card-title-bar">
+            <div class="card-title-left">
+              <svg class="card-title-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
+              <h2 class="card-main-title">Danh Sách Người Dùng</h2>
+            </div>
+            <div class="card-title-actions">
+              <button class="btn-refresh" onclick="loadUsers()" title="Tải lại danh sách người dùng">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+                <span>Làm mới</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Search & Filter Toolbar -->
+          <div class="filters-toolbar">
+            <div class="search-input-box">
+              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="user-search-input" class="admin-form-control" placeholder="Tìm username, email, họ tên..." oninput="onUserFilterChanged()">
+            </div>
+
+            <select id="user-role-filter" class="admin-select" onchange="onUserFilterChanged()">
+              <option value="">-- Mọi vai trò --</option>
+              <option value="student">Sinh viên</option>
+              <option value="teacher">Giáo viên</option>
+              <option value="admin">Quản trị</option>
+            </select>
+
+            <select id="user-status-filter" class="admin-select" onchange="onUserFilterChanged()">
+              <option value="">-- Mọi trạng thái --</option>
+              <option value="active">Hoạt động (Active)</option>
+              <option value="locked">Bị khóa (Locked)</option>
+            </select>
+          </div>
+
+          <!-- Data Table -->
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th style="width: 70px;">ID</th>
+                  <th>Username</th>
+                  <th>Họ và tên</th>
+                  <th>Email</th>
+                  <th style="width: 120px;">Vai trò</th>
+                  <th style="width: 110px;">Trạng thái</th>
+                  <th style="width: 120px;">Ngày tạo</th>
+                  <th style="width: 100px; text-align: center;">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="users-tbody">
+                <tr><td colspan="8" style="text-align: center; color: var(--admin-text-muted); padding: 2rem;">Đang tải danh sách người dùng...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="pagination-bar" id="users-pagination-bar">
+            <div id="users-pagination-info">Hiển thị 0 - 0 trong tổng số 0 bản ghi</div>
+            <div class="pagination-controls">
+              <button class="page-btn" id="users-prev-btn" onclick="changeUsersPage(-1)" title="Trang trước">&lt;</button>
+              <div id="users-page-numbers" style="display: flex; gap: 0.35rem;"></div>
+              <button class="page-btn" id="users-next-btn" onclick="changeUsersPage(1)" title="Trang sau">&gt;</button>
+              <select class="page-size-select" id="users-page-size" onchange="onUsersPageSizeChange(this.value)">
+                <option value="5">5 / trang</option>
+                <option value="10" selected>10 / trang</option>
+                <option value="20">20 / trang</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SECTION 2: ADM-02 — THỐNG KÊ HỆ THỐNG
+           ==================================================================== -->
+      <section id="section-stats" class="admin-section" style="display: none;">
+        <!-- Card Tiêu Đề & 3 Thẻ Thống Kê KPI -->
+        <div class="admin-card">
+          <div class="card-title-bar">
+            <div class="card-title-left">
+              <svg class="card-title-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M5 9.2h3V19H5zM10.6 5h2.8v14.2h-2.8zm5.6 8h3V19h-3z"/>
+              </svg>
+              <h2 class="card-main-title">Thống Kê Hệ Thống</h2>
+            </div>
+            <div class="card-title-actions">
+              <button class="btn-refresh" onclick="loadStats()" title="Tải lại số liệu thống kê">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+                <span>Làm mới</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 3 Thẻ KPI Metrics -->
+          <div class="stats-cards-grid">
+            <!-- Thẻ 1: Tổng người dùng -->
+            <div class="kpi-card kpi-users">
+              <div class="kpi-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                </svg>
+              </div>
+              <div class="kpi-text-group">
+                <span class="kpi-label">TỔNG NGƯỜI DÙNG</span>
+                <span class="kpi-value" id="stat-total-users">-</span>
+              </div>
+            </div>
+
+            <!-- Thẻ 2: Tổng đề thi đã mở -->
+            <div class="kpi-card kpi-exams">
+              <div class="kpi-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                </svg>
+              </div>
+              <div class="kpi-text-group">
+                <span class="kpi-label">TỔNG ĐỀ THI ĐÃ MỞ</span>
+                <span class="kpi-value" id="stat-total-exams">-</span>
+              </div>
+            </div>
+
+            <!-- Thẻ 3: Lượt làm bài đã thực hiện -->
+            <div class="kpi-card kpi-attempts">
+              <div class="kpi-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm-2 14l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
+                </svg>
+              </div>
+              <div class="kpi-text-group">
+                <span class="kpi-label">LƯỢT LÀM BÀI ĐÃ THỰC HIỆN</span>
+                <span class="kpi-value" id="stat-total-attempts">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bảng Phân Bố Câu Hỏi Theo Môn Học (Siêu dữ liệu) -->
+        <div class="admin-card">
+          <div class="card-title-bar" style="margin-bottom: 1rem;">
+            <div class="card-title-left">
+              <svg class="card-title-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 4.02 2 6.5s4.48 4.5 10 4.5 10-2.02 10-4.5S17.52 2 12 2zm0 6.5C7.58 8.5 4 7.16 4 6.5S7.58 4.5 12 4.5s8 1.34 8 2-3.58 2-8 2zM2 9.5v3c0 2.48 4.48 4.5 10 4.5s10-2.02 10-4.5v-3C20.67 11.23 16.65 12.5 12 12.5S3.33 11.23 2 9.5zm0 6v3c0 2.48 4.48 4.5 10 4.5s10-2.02 10-4.5v-3C20.67 17.23 16.65 18.5 12 18.5S3.33 17.23 2 15.5z"/>
+              </svg>
+              <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--admin-navy); margin: 0;">Phân Bố Câu Hỏi Theo Môn Học (Siêu dữ liệu)</h3>
+            </div>
+          </div>
+
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th style="width: 60px;">#</th>
+                  <th>Môn học / Chủ đề</th>
+                  <th style="width: 140px;">Mức độ</th>
+                  <th style="width: 180px;">Số lượng câu hỏi</th>
+                </tr>
+              </thead>
+              <tbody id="stats-questions-tbody">
+                <tr><td colspan="4" style="text-align: center; color: var(--admin-text-muted); padding: 2rem;">Đang tải số liệu phân bố câu hỏi...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SECTION 3: ADM-03 — NHẬT KÝ KIỂM TOÁN
+           ==================================================================== -->
+      <section id="section-audit" class="admin-section" style="display: none;">
+        <div class="admin-card">
+          <!-- Card Title & Actions -->
+          <div class="card-title-bar">
+            <div class="card-title-left">
+              <svg class="card-title-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+              </svg>
+              <h2 class="card-main-title">Nhật Ký Kiểm Toán Hệ Thống (Audit Trail)</h2>
+            </div>
+            <div class="card-title-actions">
+              <button class="btn-refresh" onclick="loadAuditLogs()" title="Tải lại nhật ký kiểm toán">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+                <span>Làm mới</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Table Nhật ký kiểm toán -->
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th style="width: 60px;">#</th>
+                  <th style="width: 220px;">Người thực hiện</th>
+                  <th style="width: 170px;">Hành động</th>
+                  <th style="width: 130px;">Đối tượng</th>
+                  <th>Chi tiết JSON</th>
+                  <th style="width: 130px;">IP Client</th>
+                  <th style="width: 130px;">Thời gian</th>
+                </tr>
+              </thead>
+              <tbody id="audit-tbody">
+                <tr><td colspan="7" style="text-align: center; color: var(--admin-text-muted); padding: 2rem;">Đang tải nhật ký kiểm toán...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Bar cho Audit Logs -->
+          <div class="pagination-bar" id="audit-pagination-bar">
+            <div id="audit-pagination-info">Hiển thị 0 - 0 trong tổng số 0 bản ghi</div>
+            <div class="pagination-controls">
+              <button class="page-btn" id="audit-prev-btn" onclick="changeAuditPage(-1)" title="Trang trước">&lt;</button>
+              <div id="audit-page-numbers" style="display: flex; gap: 0.35rem;"></div>
+              <button class="page-btn" id="audit-next-btn" onclick="changeAuditPage(1)" title="Trang sau">&gt;</button>
+              <select class="page-size-select" id="audit-page-size" onchange="onAuditPageSizeChange(this.value)">
+                <option value="5">5 / trang</option>
+                <option value="10" selected>10 / trang</option>
+                <option value="20">20 / trang</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ========================================================================
+       3. CONFIRMATION MODALS
+       ======================================================================== -->
+  <!-- Modal Khóa / Mở Khóa Người Dùng -->
+  <div class="admin-modal-overlay" id="lock-confirm-modal">
+    <div class="admin-modal-box">
+      <h3 class="admin-modal-title" id="lock-modal-title">Xác nhận thao tác</h3>
+      <p class="admin-modal-desc" id="lock-modal-desc">Bạn có chắc chắn muốn thực hiện thao tác này?</p>
+      <div class="admin-modal-actions">
+        <button type="button" class="admin-header-btn" onclick="closeLockModal()">Hủy</button>
+        <button type="button" class="btn-table-action" id="lock-modal-submit-btn" onclick="executeLockAction()">Xác nhận</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Đổi vai trò Người Dùng -->
+  <div class="admin-modal-overlay" id="role-confirm-modal">
+    <div class="admin-modal-box">
+      <h3 class="admin-modal-title">Xác nhận thay đổi vai trò</h3>
+      <p class="admin-modal-desc" id="role-modal-desc">Bạn có chắc chắn muốn cập nhật vai trò cho người dùng này?</p>
+      <div class="admin-modal-actions">
+        <button type="button" class="admin-header-btn" onclick="closeRoleModal()">Hủy</button>
+        <button type="button" class="btn-table-action btn-action-unlock" id="role-modal-submit-btn" onclick="executeRoleAction()">Lưu thay đổi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       4. SCRIPTS & LOGIC ĐIỀU KHIỂN
+       ======================================================================== -->
+  <script src="/js/api.js"></script>
+  <script>
+    // State management
+    let currentAdminUser = null;
+    let currentActiveTab = 'users';
+
+    // Users state
+    let allUsers = [];
+    let filteredUsers = [];
+    let usersCurrentPage = 1;
+    let usersPageSize = 10;
+
+    // Audit logs state
+    let auditLogs = [];
+    let auditCurrentPage = 1;
+    let auditPageSize = 10;
+    let auditTotal = 0;
+
+    // Pending modal action states
+    let pendingLockAction = null;
+    let pendingRoleAction = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Kiểm tra quyền truy cập Admin
+      currentAdminUser = API.getUser();
+      if (!currentAdminUser || currentAdminUser.role !== 'admin' || !API.getToken()) {
+        window.location.href = '/index.html';
+        return;
+      }
+
+      // 2. Điền thông tin Quản trị viên
+      const name = currentAdminUser.fullName || currentAdminUser.username || 'Quan Tri Vien He Thong';
+      document.getElementById('admin-display-name').textContent = name;
+      document.getElementById('admin-avatar-initial').textContent = 'A';
+
+      // 3. Khôi phục tab từ hash URL nếu có (vd: #stats, #audit)
+      const hash = window.location.hash.replace('#', '');
+      if (['users', 'stats', 'audit'].includes(hash)) {
+        switchAdminTab(hash);
+      } else {
+        await loadUsers();
+      }
+    });
+
+    /**
+     * Chuyển tab điều hướng Admin
+     */
+    function switchAdminTab(tab) {
+      currentActiveTab = tab;
+      window.location.hash = tab;
+
+      // Cập nhật hiển thị Sections
+      document.getElementById('section-users').style.display = tab === 'users' ? 'block' : 'none';
+      document.getElementById('section-stats').style.display = tab === 'stats' ? 'block' : 'none';
+      document.getElementById('section-audit').style.display = tab === 'audit' ? 'block' : 'none';
+
+      // Cập nhật Sidebar menu
+      document.getElementById('menu-users').classList.toggle('active', tab === 'users');
+      document.getElementById('menu-stats').classList.toggle('active', tab === 'stats');
+      document.getElementById('menu-audit').classList.toggle('active', tab === 'audit');
+
+      // Cập nhật Breadcrumb
+      const breadcrumbTitle = document.getElementById('breadcrumb-active-title');
+      if (tab === 'users') {
+        breadcrumbTitle.textContent = 'Quản lý người dùng';
+        loadUsers();
+      } else if (tab === 'stats') {
+        breadcrumbTitle.textContent = 'Thống kê hệ thống';
+        loadStats();
+      } else if (tab === 'audit') {
+        breadcrumbTitle.textContent = 'Nhật ký kiểm toán';
+        loadAuditLogs();
+      }
+    }
+
+    /**
+     * ADM-01: Tải danh sách người dùng
+     */
+    async function loadUsers() {
+      const tbody = document.getElementById('users-tbody');
+      try {
+        const search = document.getElementById('user-search-input').value.trim();
+        const role = document.getElementById('user-role-filter').value;
+        const status = document.getElementById('user-status-filter').value;
+
+        let qs = [];
+        if (search) qs.push(`search=${encodeURIComponent(search)}`);
+        if (role) qs.push(`role=${encodeURIComponent(role)}`);
+        if (status) qs.push(`status=${encodeURIComponent(status)}`);
+
+        const url = '/admin/users' + (qs.length ? '?' + qs.join('&') : '');
+        const res = await API.get(url);
+        allUsers = res.users || [];
+        filteredUsers = [...allUsers];
+
+        usersCurrentPage = 1;
+        renderUsersTable();
+      } catch (err) {
+        showToast(err.message || 'Không thể tải danh sách người dùng', 'error');
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--admin-danger); padding: 2rem;">Lỗi tải dữ liệu: ${err.message}</td></tr>`;
+      }
+    }
+
+    function onUserFilterChanged() {
+      usersCurrentPage = 1;
+      loadUsers();
+    }
+
+    /**
+     * Render bảng người dùng kèm phân trang client-side
+     */
+    function renderUsersTable() {
+      const tbody = document.getElementById('users-tbody');
+      const total = filteredUsers.length;
+
+      if (total === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--admin-text-muted); padding: 2.5rem;">Không tìm thấy người dùng nào phù hợp với bộ lọc.</td></tr>';
+        document.getElementById('users-pagination-info').textContent = 'Hiển thị 0 - 0 trong tổng số 0 bản ghi';
+        document.getElementById('users-page-numbers').innerHTML = '';
+        document.getElementById('users-prev-btn').disabled = true;
+        document.getElementById('users-next-btn').disabled = true;
+        return;
+      }
+
+      const totalPages = Math.ceil(total / usersPageSize);
+      if (usersCurrentPage > totalPages) usersCurrentPage = totalPages;
+      if (usersCurrentPage < 1) usersCurrentPage = 1;
+
+      const startIndex = (usersCurrentPage - 1) * usersPageSize;
+      const endIndex = Math.min(startIndex + usersPageSize, total);
+      const currentRows = filteredUsers.slice(startIndex, endIndex);
+
+      tbody.innerHTML = currentRows.map((u) => {
+        const isSelf = currentAdminUser && currentAdminUser.id === u.id;
+        const isLocked = u.status === 'locked';
+
+        const statusBadge = isLocked 
+          ? `<span class="status-badge status-inactive">INACTIVE</span>` 
+          : `<span class="status-badge status-active">ACTIVE</span>`;
+
+        const actionBtn = isLocked 
+          ? `<button class="btn-table-action btn-action-unlock" onclick="openLockModal(${u.id}, '${escapeHtml(u.username)}', 'active')">Mở khóa</button>`
+          : `<button class="btn-table-action btn-action-lock" onclick="openLockModal(${u.id}, '${escapeHtml(u.username)}', 'locked')">Khóa</button>`;
+
+        return `
+          <tr>
+            <td style="color: var(--admin-text-muted); font-weight: 500;">#${u.id}</td>
+            <td><strong>${escapeHtml(u.username)}</strong></td>
+            <td>${escapeHtml(u.full_name || '-')}</td>
+            <td>${escapeHtml(u.email || '-')}</td>
+            <td>
+              <select class="role-select-inline" onchange="promptRoleChange(${u.id}, '${escapeHtml(u.username)}', this.value, '${u.role}')">
+                <option value="student" ${u.role === 'student' ? 'selected' : ''}>student</option>
+                <option value="teacher" ${u.role === 'teacher' ? 'selected' : ''}>teacher</option>
+                <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>admin</option>
+              </select>
+            </td>
+            <td>${statusBadge}</td>
+            <td>${formatDateVN(u.created_at)}</td>
+            <td style="text-align: center;">${actionBtn}</td>
+          </tr>
+        `;
+      }).join('');
+
+      // Cập nhật thanh phân trang
+      document.getElementById('users-pagination-info').textContent = 
+        `Hiển thị ${startIndex + 1} - ${endIndex} trong tổng số ${total} bản ghi`;
+
+      renderPageNumbers('users-page-numbers', totalPages, usersCurrentPage, (page) => {
+        usersCurrentPage = page;
+        renderUsersTable();
+      });
+
+      document.getElementById('users-prev-btn').disabled = usersCurrentPage <= 1;
+      document.getElementById('users-next-btn').disabled = usersCurrentPage >= totalPages;
+    }
+
+    function changeUsersPage(delta) {
+      usersCurrentPage += delta;
+      renderUsersTable();
+    }
+
+    function onUsersPageSizeChange(val) {
+      usersPageSize = parseInt(val, 10) || 10;
+      usersCurrentPage = 1;
+      renderUsersTable();
+    }
+
+    /**
+     * Modal Khóa / Mở khóa người dùng
+     */
+    function openLockModal(userId, username, targetStatus) {
+      if (currentAdminUser && (String(currentAdminUser.id) === String(userId) || currentAdminUser.username === username) && targetStatus === 'locked') {
+        showToast('Không thể khóa tài khoản quản trị viên đang đăng nhập', 'error');
+        return;
+      }
+      pendingLockAction = { userId, username, targetStatus };
+      const title = document.getElementById('lock-modal-title');
+      const desc = document.getElementById('lock-modal-desc');
+      const submitBtn = document.getElementById('lock-modal-submit-btn');
+
+      if (targetStatus === 'locked') {
+        title.textContent = 'Xác nhận khóa tài khoản';
+        desc.innerHTML = `Bạn có chắc chắn muốn khóa tài khoản <strong>${username}</strong> (#${userId})?<br><br>Khi bị khóa, tài khoản này sẽ ngay lập tức bị thu hồi mọi phiên làm việc và không thể đăng nhập vào hệ thống.`;
+        submitBtn.className = 'btn-table-action btn-action-lock';
+        submitBtn.textContent = 'Xác nhận khóa';
+      } else {
+        title.textContent = 'Xác nhận mở khóa tài khoản';
+        desc.innerHTML = `Bạn có chắc chắn muốn mở khóa tài khoản <strong>${username}</strong> (#${userId})?<br><br>Tài khoản sẽ được kích hoạt lại trạng thái hoạt động bình thường.`;
+        submitBtn.className = 'btn-table-action btn-action-unlock';
+        submitBtn.textContent = 'Xác nhận mở khóa';
+      }
+
+      document.getElementById('lock-confirm-modal').classList.add('open');
+    }
+
+    function closeLockModal() {
+      document.getElementById('lock-confirm-modal').classList.remove('open');
+      pendingLockAction = null;
+    }
+
+    async function executeLockAction() {
+      if (!pendingLockAction) return;
+      const { userId, username, targetStatus } = pendingLockAction;
+      const submitBtn = document.getElementById('lock-modal-submit-btn');
+
+      try {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Đang xử lý...';
+
+        await API.patch(`/admin/users/${userId}`, { status: targetStatus });
+        showToast(`Đã ${targetStatus === 'locked' ? 'khóa' : 'mở khóa'} tài khoản ${username} thành công`, 'success');
+        closeLockModal();
+        await loadUsers();
+      } catch (err) {
+        showToast(err.message || 'Thao tác không thành công', 'error');
+      } finally {
+        submitBtn.disabled = false;
+      }
+    }
+
+    /**
+     * Đổi vai trò người dùng (BD-02)
+     */
+    function promptRoleChange(userId, username, newRole, oldRole) {
+      if (newRole === oldRole) return;
+      pendingRoleAction = { userId, username, newRole, oldRole };
+
+      const desc = document.getElementById('role-modal-desc');
+      desc.innerHTML = `Bạn có chắc chắn muốn chuyển vai trò của người dùng <strong>${username}</strong> (#${userId}) từ <code>${oldRole}</code> sang <code>${newRole}</code>?`;
+
+      document.getElementById('role-confirm-modal').classList.add('open');
+    }
+
+    function closeRoleModal() {
+      document.getElementById('role-confirm-modal').classList.remove('open');
+      if (pendingRoleAction) {
+        renderUsersTable(); // Khôi phục lại select box về giá trị cũ
+        pendingRoleAction = null;
+      }
+    }
+
+    async function executeRoleAction() {
+      if (!pendingRoleAction) return;
+      const { userId, username, newRole } = pendingRoleAction;
+      const submitBtn = document.getElementById('role-modal-submit-btn');
+
+      try {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Đang cập nhật...';
+
+        await API.patch(`/admin/users/${userId}`, { role: newRole });
+        showToast(`Đã cập nhật vai trò người dùng ${username} thành ${newRole}`, 'success');
+        pendingRoleAction = null;
+        document.getElementById('role-confirm-modal').classList.remove('open');
+        await loadUsers();
+      } catch (err) {
+        showToast(err.message || 'Cập nhật vai trò thất bại', 'error');
+        closeRoleModal();
+      } finally {
+        submitBtn.disabled = false;
+      }
+    }
+
+    /**
+     * ADM-02: Tải thống kê hệ thống
+     */
+    async function loadStats() {
+      try {
+        const res = await API.get('/admin/stats');
+        const stats = res.stats || {};
+
+        // 3 Thẻ số liệu KPI
+        const totalUsers = stats.users?.total_users ?? 0;
+        const totalExams = stats.exams?.total_exams ?? 0;
+        const totalAttempts = stats.attempts?.total_attempts ?? 0;
+
+        document.getElementById('stat-total-users').textContent = totalUsers;
+        document.getElementById('stat-total-exams').textContent = totalExams;
+        document.getElementById('stat-total-attempts').textContent = totalAttempts;
+
+        // Bảng phân bố câu hỏi
+        const tbody = document.getElementById('stats-questions-tbody');
+        const questions = stats.questions || [];
+
+        if (questions.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--admin-text-muted); padding: 2rem;">Chưa có dữ liệu câu hỏi trong hệ thống.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = questions.map((q, idx) => {
+          let diffClass = 'diff-easy';
+          const diffUpper = (q.difficulty || '').toUpperCase();
+          if (diffUpper === 'HARD') diffClass = 'diff-hard';
+          else if (diffUpper === 'MEDIUM') diffClass = 'diff-medium';
+
+          return `
+            <tr>
+              <td>${idx + 1}</td>
+              <td><strong>${escapeHtml(q.subject || 'Tổng quát')}</strong></td>
+              <td><span class="diff-badge ${diffClass}">${diffUpper}</span></td>
+              <td><strong>${q.count}</strong> câu hỏi</td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        showToast(err.message || 'Không thể tải thống kê hệ thống', 'error');
+      }
+    }
+
+    /**
+     * ADM-03: Tải nhật ký kiểm toán (Audit Trail)
+     */
+    async function loadAuditLogs() {
+      const tbody = document.getElementById('audit-tbody');
+      try {
+        const offset = (auditCurrentPage - 1) * auditPageSize;
+        const res = await API.get(`/admin/audit-logs?limit=${auditPageSize}&offset=${offset}`);
+        
+        auditLogs = res.logs || [];
+        auditTotal = res.pagination?.total ?? auditLogs.length;
+
+        renderAuditTable();
+      } catch (err) {
+        showToast(err.message || 'Không thể tải nhật ký kiểm toán', 'error');
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--admin-danger); padding: 2rem;">Lỗi tải dữ liệu: ${err.message}</td></tr>`;
+      }
+    }
+
+    function renderAuditTable() {
+      const tbody = document.getElementById('audit-tbody');
+      const total = auditTotal;
+
+      if (auditLogs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--admin-text-muted); padding: 2.5rem;">Chưa có nhật ký kiểm toán nào được ghi nhận.</td></tr>';
+        document.getElementById('audit-pagination-info').textContent = 'Hiển thị 0 - 0 trong tổng số 0 bản ghi';
+        document.getElementById('audit-page-numbers').innerHTML = '';
+        document.getElementById('audit-prev-btn').disabled = true;
+        document.getElementById('audit-next-btn').disabled = true;
+        return;
+      }
+
+      const totalPages = Math.ceil(total / auditPageSize) || 1;
+      const startIndex = (auditCurrentPage - 1) * auditPageSize;
+      const endIndex = Math.min(startIndex + auditLogs.length, total);
+
+      tbody.innerHTML = auditLogs.map((l, idx) => {
+        const timeParts = formatDateTimeTwoLines(l.created_at);
+        const detailsStr = l.details ? escapeHtml(JSON.stringify(l.details)) : '-';
+
+        return `
+          <tr>
+            <td>${l.id}</td>
+            <td><strong>${escapeHtml(l.username || 'System')}</strong> <span style="color: var(--admin-text-muted); font-size: 0.8rem;">(${escapeHtml(l.role || '-')})</span></td>
+            <td><span class="action-badge">${escapeHtml(l.action)}</span></td>
+            <td>${escapeHtml(l.target_type || '')} #${l.target_id ?? '-'}</td>
+            <td style="font-family: monospace; font-size: 0.78rem; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${detailsStr}">
+              ${detailsStr}
+            </td>
+            <td>${escapeHtml(l.ip_address || '-')}</td>
+            <td style="line-height: 1.35; font-size: 0.82rem;">
+              <div>${timeParts.time}</div>
+              <div style="color: var(--admin-text-muted); font-size: 0.75rem;">${timeParts.date}</div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('audit-pagination-info').textContent = 
+        `Hiển thị ${startIndex + 1} - ${endIndex} trong tổng số ${total} bản ghi`;
+
+      renderPageNumbers('audit-page-numbers', totalPages, auditCurrentPage, (page) => {
+        auditCurrentPage = page;
+        loadAuditLogs();
+      });
+
+      document.getElementById('audit-prev-btn').disabled = auditCurrentPage <= 1;
+      document.getElementById('audit-next-btn').disabled = auditCurrentPage >= totalPages;
+    }
+
+    function changeAuditPage(delta) {
+      auditCurrentPage += delta;
+      loadAuditLogs();
+    }
+
+    function onAuditPageSizeChange(val) {
+      auditPageSize = parseInt(val, 10) || 10;
+      auditCurrentPage = 1;
+      loadAuditLogs();
+    }
+
+    /**
+     * Helpers hỗ trợ render số trang
+     */
+    function renderPageNumbers(containerId, totalPages, currentPage, onPageClick) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+
+      let start = Math.max(1, currentPage - 2);
+      let end = Math.min(totalPages, currentPage + 2);
+
+      for (let p = start; p <= end; p++) {
+        const btn = document.createElement('button');
+        btn.className = `page-btn ${p === currentPage ? 'active' : ''}`;
+        btn.textContent = p;
+        btn.onclick = () => onPageClick(p);
+        container.appendChild(btn);
+      }
+    }
+
+    function formatDateVN(dateStr) {
+      if (!dateStr) return '-';
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+
+    function formatDateTimeTwoLines(dateStr) {
+      if (!dateStr) return { time: '-', date: '-' };
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return { time: dateStr, date: '' };
+      const time = d.toTimeString().split(' ')[0];
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return { time, date: `${day}/${month}/${year}` };
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+  </script>
+</body>
+</html>
