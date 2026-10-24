@@ -1,0 +1,181 @@
+services:
+  # 1. MySQL Database Service
+  mysql:
+    image: mysql:8.0
+    container_name: quizsystem-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: RootPassword123!
+      MYSQL_DATABASE: quizsystem
+      MYSQL_USER: quiz_user
+      MYSQL_PASSWORD: QuizPass123!
+    ports:
+      # Host port 3307 mapped to container 3306 (avoids conflict with host MySQL267 on 3306)
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./database/02_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "quiz_user", "-pQuizPass123!"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - quizsystem-net
+
+  # 2. Backend Application Service (Node.js + Express)
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: quizsystem-backend
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: quiz_user
+      DB_PASSWORD: QuizPass123!
+      DB_NAME: quizsystem
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      FRONTEND_URL: http://localhost
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend/src:/app/src
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - quizsystem-net
+
+  # 3. phpMyAdmin Database Administration
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: quizsystem-phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: RootPassword123!
+      UPLOAD_LIMIT: 64M
+    ports:
+      - "8081:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - quizsystem-net
+
+  # 4. Nginx Reverse Proxy & Static Frontend Server
+  nginx:
+    image: nginx:alpine
+    container_name: quizsystem-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - app
+    networks:
+      - quizsystem-net
+
+  # 5. Prometheus Monitoring Metrics Collector
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: quizsystem-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - quizsystem-net
+
+  # 6. Grafana Operational Dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: quizsystem-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - quizsystem-net
+
+  # 7. Loki Centralized Log Storage
+  loki:
+    image: grafana/loki:2.9.2
+    container_name: quizsystem-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - quizsystem-net
+
+  # 8. Promtail Log Agent Collector
+  promtail:
+    image: grafana/promtail:2.9.2
+    container_name: quizsystem-promtail
+    restart: unless-stopped
+    ports:
+      - "9080:9080"
+    volumes:
+      - ./monitoring/promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/log:/var/log:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    networks:
+      - quizsystem-net
+
+  # 9. Mailpit Test Email Server & UI
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: quizsystem-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025" # SMTP port
+      - "8025:8025" # Web UI port
+    networks:
+      - quizsystem-net
+
+networks:
+  quizsystem-net:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:

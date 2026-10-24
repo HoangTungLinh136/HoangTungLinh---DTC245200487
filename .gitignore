@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS Files
+Thumbs.db
+.DS_Store
+
+# Docker volumes
+mysql_data/
+prometheus_data/
+grafana_data/
+loki_data/
+
+# Temporary and test artifacts
+scratch/
+database/backup_*.sql
