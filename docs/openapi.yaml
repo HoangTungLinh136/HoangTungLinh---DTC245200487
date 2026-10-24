@@ -1,0 +1,1035 @@
+openapi: 3.1.0
+info:
+  title: QuizSystem API — design only
+  version: 0.1.0-design
+  description: |
+    API specification, not an implemented service. Authoritative business and transaction
+    contracts are in DESIGN_BASELINE.md. Gate 01-A remains BLOCKED. Every resource uses
+    server-side ownership and field projections. No client timestamp is admission evidence.
+    Operations marked x-blocked-by IA01-F01 must not be enabled with alternate deadline
+    semantics. Unknown JSON properties rejected. Sensitive responses private/no-store.
+    Opaque IDs, revisions and exact decimals use strings to avoid JS precision loss.
+servers:
+  - url: /api/v1
+security:
+  - sessionCookie: []
+x-implementation-status: NOT_IMPLEMENTED
+x-gate: BLOCKED
+x-source-of-truth: DESIGN_BASELINE.md
+paths:
+  /auth/csrf:
+    get:
+      operationId: getCsrf
+      security: []
+      description: Issue CSRF nonce and pre-auth cookie if needed; never grants a role. Rate limited.
+      responses:
+        '200':
+          description: CSRF nonce; session cookie HttpOnly/Secure/host-only.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [csrf_token]
+                properties:
+                  csrf_token: {type: string, writeOnly: false}
+        default: {$ref: '#/components/responses/Error'}
+  /auth/register:
+    post:
+      operationId: register
+      security:
+        - csrfHeader: []
+      x-origin-validation: required
+      description: Pre-auth session-bound CSRF required. Creates active Student/Teacher, no email approval.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Register'}
+      responses:
+        '201':
+          description: Active account; no credentials/hashes in response.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Account'}
+        '409': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /auth/login:
+    post:
+      operationId: login
+      security:
+        - csrfHeader: []
+      x-origin-validation: required
+      description: Pre-auth CSRF. Credential version rechecked under user lock; rotate session on login.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Credentials'}
+      responses:
+        '200':
+          description: Authenticated; Secure/HttpOnly cookie, new CSRF nonce fetched as needed.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Account'}
+        '401': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /auth/session:
+    get:
+      operationId: currentSession
+      responses:
+        '200':
+          description: Current account projection; no raw session secret.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Account'}
+        '401': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /auth/logout:
+    post:
+      operationId: logout
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      x-origin-validation: required
+      description: Explicitly revoke session, clear cookie; local buffers cleared by client.
+      responses:
+        '204': {description: Session revoked.}
+        default: {$ref: '#/components/responses/Error'}
+  /auth/password/forgot:
+    post:
+      operationId: forgotPassword
+      security:
+        - csrfHeader: []
+      x-origin-validation: required
+      description: Pre-auth CSRF; uniform existent/nonexistent message; not an email-delivered ACK.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [email]
+              properties:
+                email: {type: string, format: email}
+      responses:
+        '202':
+          description: Request accepted, not a claim account exists or SMTP succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [message]
+                properties:
+                  message: {type: string, const: 'If the account is eligible, reset instructions will be sent.'}
+        default: {$ref: '#/components/responses/Error'}
+  /auth/password/reset:
+    post:
+      operationId: resetPassword
+      security:
+        - csrfHeader: []
+      x-origin-validation: required
+      description: Token single use; user/token locks; normal reset still revokes sessions per approved policy. No auto-login.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [token, new_password]
+              properties:
+                token: {type: string, writeOnly: true}
+                new_password: {type: string, writeOnly: true}
+      responses:
+        '204': {description: Password replaced and sessions revoked atomically.}
+        default: {$ref: '#/components/responses/Error'}
+  /teacher/questions:
+    get:
+      operationId: listOwnQuestions
+      x-role: Teacher
+      x-ownership: current-user
+      responses:
+        '200':
+          description: Own bank; keys never available through Admin/Student routes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/QuestionVersion'}
+        default: {$ref: '#/components/responses/Error'}
+    post:
+      operationId: createQuestion
+      x-role: Teacher
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      x-origin-validation: required
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/QuestionInput'}
+      responses:
+        '201':
+          description: New owned immutable question version.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/QuestionVersion'}
+        default: {$ref: '#/components/responses/Error'}
+  /teacher/questions/{id}:
+    parameters:
+      - {$ref: '#/components/parameters/Id'}
+    patch:
+      operationId: versionQuestion
+      x-role: Teacher
+      x-ownership: current-user
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      x-origin-validation: required
+      description: Creates replacement version; referenced historical version unchanged.
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/QuestionInput'}
+      responses:
+        '200':
+          description: New immutable version.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/QuestionVersion'}
+        default: {$ref: '#/components/responses/Error'}
+    delete:
+      operationId: archiveQuestion
+      x-role: Teacher
+      x-ownership: current-user
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      x-origin-validation: required
+      description: Logical archive only; never cascade historical versions or snapshots.
+      responses:
+        '204': {description: Archived.}
+        default: {$ref: '#/components/responses/Error'}
+  /teacher/exams:
+    get:
+      operationId: listOwnExams
+      x-role: Teacher
+      responses:
+        '200':
+          description: Owned exam metadata.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/ExamMetadata'}
+        default: {$ref: '#/components/responses/Error'}
+    post:
+      operationId: createExam
+      x-role: Teacher
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      x-origin-validation: required
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ExamInput'}
+      responses:
+        '201':
+          description: Owned exam version created atomically.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ExamMetadata'}
+        default: {$ref: '#/components/responses/Error'}
+  /teacher/exams/{id}:
+    parameters:
+      - {$ref: '#/components/parameters/Id'}
+    get:
+      operationId: readOwnExam
+      x-role: Teacher
+      x-ownership: current-user
+      responses:
+        '200':
+          description: Owned authoring projection.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [metadata, definition]
+                properties:
+                  metadata: {$ref: '#/components/schemas/ExamMetadata'}
+                  definition: {$ref: '#/components/schemas/ExamInput'}
+        default: {$ref: '#/components/responses/Error'}
+    patch:
+      operationId: updateOwnExam
+      x-role: Teacher
+      x-ownership: current-user
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      x-origin-validation: required
+      parameters:
+        - {$ref: '#/components/parameters/IfMatch'}
+      description: CAS edit revision; assessment-affecting fields frozen after attempts; no blanket metadata freeze.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ExamInput'}
+      responses:
+        '200':
+          description: Updated version/metadata; emit corresponding ETag.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ExamMetadata'}
+        '409': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+    delete:
+      operationId: archiveOwnExam
+      x-role: Teacher
+      x-ownership: current-user
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      x-origin-validation: required
+      description: Logical archive; referenced attempts/history not deleted; cannot alter active assessment access.
+      responses:
+        '204': {description: Archived if allowed.}
+        default: {$ref: '#/components/responses/Error'}
+  /teacher/exams/{id}/clone:
+    parameters:
+      - {$ref: '#/components/parameters/Id'}
+    post:
+      operationId: cloneOwnExam
+      x-role: Teacher
+      x-ownership: current-user
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      x-origin-validation: required
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      responses:
+        '201':
+          description: New exam identity and authoring version; original history unchanged.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ExamMetadata'}
+        default: {$ref: '#/components/responses/Error'}
+  /teacher/exams/{id}/assignments:
+    parameters:
+      - {$ref: '#/components/parameters/Id'}
+    put:
+      operationId: replaceAssignments
+      x-role: Teacher
+      x-ownership: current-user
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      x-origin-validation: required
+      description: Exam X lock; CAS revision; immutable access/assessment constraints enforced.
+      parameters:
+        - {$ref: '#/components/parameters/IfMatch'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [student_ids]
+              properties:
+                student_ids:
+                  type: array
+                  uniqueItems: true
+                  items: {$ref: '#/components/schemas/Id'}
+      responses:
+        '204': {description: Assignment set replaced if allowed.}
+        default: {$ref: '#/components/responses/Error'}
+  /teacher/exams/{id}/publication:
+    parameters:
+      - {$ref: '#/components/parameters/Id'}
+    put:
+      operationId: publishResults
+      x-role: Teacher
+      x-ownership: current-user
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      x-origin-validation: required
+      parameters:
+        - {$ref: '#/components/parameters/IfMatch'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [scores_published, keys_published]
+              properties:
+                scores_published: {type: boolean}
+                keys_published: {type: boolean}
+      responses:
+        '204': {description: Independent flags persisted; projection revision changes.}
+        default: {$ref: '#/components/responses/Error'}
+  /teacher/exams/{id}/attempts:
+    parameters:
+      - {$ref: '#/components/parameters/Id'}
+    get:
+      operationId: listExamAttempts
+      x-role: Teacher
+      x-ownership: current-user
+      description: Metadata list. Live academic review not enabled without field/state policy.
+      responses:
+        '200':
+          description: Attempt metadata, no auth secrets.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Attempt'}
+        default: {$ref: '#/components/responses/Error'}
+  /exams:
+    get:
+      operationId: studentCatalog
+      x-role: Student
+      responses:
+        '200':
+          description: Eligible catalog metadata only; no question bank/keys.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/ExamMetadata'}
+        default: {$ref: '#/components/responses/Error'}
+  /exams/{id}/attempts:
+    parameters:
+      - {$ref: '#/components/parameters/Id'}
+    post:
+      operationId: startOrResume
+      x-role: Student
+      x-blocked-by: IA01-F01
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      x-origin-validation: required
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      description: User serialization and active constraint. Live creation blocked until admission contract satisfied.
+      responses:
+        '200':
+          description: Existing attempt, including retry of old Start operation; not a new attempt.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Attempt'}
+        '201':
+          description: New attempt and complete snapshot committed; unavailable while F01 blocked.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Attempt'}
+        '503': {$ref: '#/components/responses/DesignBlocked'}
+        default: {$ref: '#/components/responses/Error'}
+  /attempts:
+    get:
+      operationId: studentHistory
+      x-role: Student
+      x-ownership: current-user
+      responses:
+        '200':
+          description: Own attempt metadata; result fields fetched through result projection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Attempt'}
+        default: {$ref: '#/components/responses/Error'}
+  /attempts/{id}:
+    parameters:
+      - {$ref: '#/components/parameters/Id'}
+    get:
+      operationId: readOwnAttempt
+      x-role: Student
+      x-ownership: current-user
+      responses:
+        '200':
+          description: Own snapshot without keys/grades; metadata includes readonly processing state.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [attempt, questions]
+                properties:
+                  attempt: {$ref: '#/components/schemas/Attempt'}
+                  questions:
+                    type: array
+                    items: {$ref: '#/components/schemas/StudentQuestion'}
+        default: {$ref: '#/components/responses/Error'}
+  /attempts/{id}/answers:
+    parameters:
+      - {$ref: '#/components/parameters/Id'}
+    post:
+      operationId: saveAnswers
+      x-role: Student
+      x-ownership: current-user
+      x-blocked-by: IA01-F01
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      x-origin-validation: required
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - {$ref: '#/components/schemas/AnswerRequest'}
+                - properties:
+                    operation: {const: SAVE}
+                    items: {minItems: 1}
+      responses:
+        '200':
+          description: Committed outcome, including original outcome replay; not queue success.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReceiptStatus'}
+        '202':
+          description: Proven durable admission only; answers may not yet be applied.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReceiptStatus'}
+        '409': {$ref: '#/components/responses/Error'}
+        '503': {$ref: '#/components/responses/DesignBlocked'}
+        default: {$ref: '#/components/responses/Error'}
+  /attempts/{id}/submit:
+    parameters:
+      - {$ref: '#/components/parameters/Id'}
+    post:
+      operationId: submitAttempt
+      x-role: Student
+      x-ownership: current-user
+      x-blocked-by: IA01-F01
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      x-origin-validation: required
+      description: First valid ordered SUBMIT freezes answers. Any batch conflict rejects batch and submit atomically.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - {$ref: '#/components/schemas/AnswerRequest'}
+                - properties:
+                    operation: {const: SUBMIT}
+      responses:
+        '200':
+          description: Receipt outcome committed; attempt finalization still requires complete barrier.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReceiptStatus'}
+        '202':
+          description: Proven durable receipt only, not final SUBMITTED claim.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReceiptStatus'}
+        '409': {$ref: '#/components/responses/Error'}
+        '503': {$ref: '#/components/responses/DesignBlocked'}
+        default: {$ref: '#/components/responses/Error'}
+  /attempts/{id}/receipts/{requestId}:
+    parameters:
+      - {$ref: '#/components/parameters/Id'}
+      - name: requestId
+        in: path
+        required: true
+        schema: {type: string}
+    get:
+      operationId: lookupOwnReceipt
+      x-role: Student
+      x-ownership: current-user
+      description: Primary reconciliation. Not-found only when old append cannot still commit; no payload disclosure.
+      responses:
+        '200':
+          description: Receipt/outcome, possibly ADMISSION_UNCERTAIN. Lookup after re-login allowed for same owner.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReceiptStatus'}
+        '404': {$ref: '#/components/responses/Error'}
+        '503': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /attempts/{id}/result:
+    parameters:
+      - {$ref: '#/components/parameters/Id'}
+    get:
+      operationId: ownResult
+      x-role: Student
+      x-ownership: current-user
+      description: Finalized own attempt. Four score/key projections, no direct fields before respective publication.
+      responses:
+        '200':
+          description: Strict result projection; private/no-store.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Result'}
+        '409': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /attempts/{id}/export:
+    parameters:
+      - {$ref: '#/components/parameters/Id'}
+    get:
+      operationId: exportOwnResult
+      x-role: Student
+      x-ownership: current-user
+      description: Same publication projection as result; no public bearer download URL or extra fields.
+      responses:
+        '200':
+          description: JSON result export; other formats require equivalent projection.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Result'}
+        default: {$ref: '#/components/responses/Error'}
+  /admin/users:
+    get:
+      operationId: adminUsers
+      x-role: Admin
+      responses:
+        '200':
+          description: Administrative account allowlist, no credentials or academic data.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Account'}
+        default: {$ref: '#/components/responses/Error'}
+  /admin/users/{id}:
+    parameters:
+      - {$ref: '#/components/parameters/Id'}
+    patch:
+      operationId: adminUpdateUser
+      x-role: Admin
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      x-origin-validation: required
+      description: User lock; role/status hard changes increment auth_epoch and audit; no impersonation or academic fields.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              minProperties: 1
+              properties:
+                role: {type: string, enum: [Student, Teacher, Admin]}
+                status: {type: string, enum: [ACTIVE, LOCKED]}
+      responses:
+        '200':
+          description: Account management projection.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Account'}
+        default: {$ref: '#/components/responses/Error'}
+  /admin/exams:
+    get:
+      operationId: adminExamMetadata
+      x-role: Admin
+      responses:
+        '200':
+          description: Exam metadata only; no academic definition or keys.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/ExamMetadata'}
+        default: {$ref: '#/components/responses/Error'}
+  /admin/statistics:
+    get:
+      operationId: adminOperationalStatistics
+      x-role: Admin
+      description: Operational aggregates permitted. No score/cohort/individual filters without separate policy.
+      responses:
+        '200':
+          description: Only operational counts/health, not individual grades or score histograms.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [exam_count, grading_pending_count, incident_count]
+                properties:
+                  exam_count: {$ref: '#/components/schemas/Revision'}
+                  grading_pending_count: {$ref: '#/components/schemas/Revision'}
+                  incident_count: {$ref: '#/components/schemas/Revision'}
+        default: {$ref: '#/components/responses/Error'}
+  /admin/incidents:
+    get:
+      operationId: adminIncidentMetadata
+      x-role: Admin
+      responses:
+        '200':
+          description: Metadata only. No intervention rights are implied.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: false
+                  required: [id, category, state, created_at]
+                  properties:
+                    id: {$ref: '#/components/schemas/Id'}
+                    category: {type: string}
+                    state: {type: string}
+                    created_at: {type: string, format: date-time}
+        default: {$ref: '#/components/responses/Error'}
+  /health/live:
+    get:
+      operationId: liveness
+      security: []
+      responses:
+        '200':
+          description: Process alive, no sensitive configuration/version data.
+        default: {$ref: '#/components/responses/Error'}
+  /health/ready:
+    get:
+      operationId: readiness
+      security: []
+      description: Internal network/proxy restricted. Admission may remain blocked even if independent modules ready.
+      responses:
+        '200': {description: Dependencies ready for enabled scope only.}
+        '503': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: __Host-quiz_session
+      description: Opaque, HttpOnly, Secure, Path=/, no Domain; server stored hash, expiry and revocation epochs.
+    csrfHeader:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+      description: Session/pre-auth-session bound nonce; required with origin checks, not authorization by itself.
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: {$ref: '#/components/schemas/Id'}
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: {type: string, minLength: 1}
+      description: Same actor/scope/key must retain digest; replay original operation result, not new attempt.
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      schema: {type: string, minLength: 1}
+      description: Server-issued ETag/revision; missing rejected, stale revision conflicts.
+  responses:
+    Error:
+      description: Rejected/unavailable; no stack, SQL, payload, token or account enumeration detail.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    DesignBlocked:
+      description: IA01-F01 unresolved; no admission/attempt consumption or pretend successful write.
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [code, correlation_id]
+            properties:
+              code: {type: string, const: DESIGN_BLOCKED}
+              correlation_id: {type: string}
+  schemas:
+    Id:
+      type: string
+      minLength: 1
+      description: Opaque stable identifier, never an authorization capability.
+    Revision:
+      type: string
+      pattern: '^(0|[1-9][0-9]*)$'
+    ExactPositive:
+      type: string
+      pattern: '^(0|[1-9][0-9]*)(\.[0-9]+)?$'
+      description: Exact decimal; semantic value must be strictly positive, finite precision/range not yet approved.
+    Credentials:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email: {type: string, format: email}
+        password: {type: string, writeOnly: true}
+    Register:
+      type: object
+      additionalProperties: false
+      required: [email, password, role, display_name]
+      properties:
+        email: {type: string, format: email}
+        password: {type: string, writeOnly: true}
+        role: {type: string, enum: [Student, Teacher]}
+        display_name: {type: string, minLength: 1}
+    Account:
+      type: object
+      additionalProperties: false
+      required: [id, email, display_name, role, status]
+      properties:
+        id: {$ref: '#/components/schemas/Id'}
+        email: {type: string, format: email}
+        display_name: {type: string}
+        role: {type: string, enum: [Student, Teacher, Admin]}
+        status: {type: string, enum: [ACTIVE, LOCKED]}
+    Choice:
+      type: object
+      additionalProperties: false
+      required: [id, text]
+      properties:
+        id: {$ref: '#/components/schemas/Id'}
+        text: {type: string}
+    QuestionInput:
+      type: object
+      additionalProperties: false
+      required: [kind, prompt, choices, correct_choice_ids]
+      properties:
+        kind: {type: string, enum: [SINGLE, MULTIPLE]}
+        prompt: {type: string, minLength: 1}
+        choices:
+          type: array
+          items: {$ref: '#/components/schemas/Choice'}
+        correct_choice_ids:
+          type: array
+          uniqueItems: true
+          minItems: 1
+          items: {$ref: '#/components/schemas/Id'}
+      description: Server checks unique choice IDs, key membership, SINGLE exactly one correct key; numeric choices range pending.
+    QuestionVersion:
+      allOf:
+        - {$ref: '#/components/schemas/QuestionInput'}
+      description: Teacher-owned definition. Version ID is returned in Location/ETag headers; Student never receives this schema.
+    ExamInput:
+      type: object
+      additionalProperties: false
+      required: [title, duration_minutes, start_time, end_time, access, attempt_limit, items]
+      properties:
+        title: {type: string, minLength: 1}
+        duration_minutes: {type: integer, exclusiveMinimum: 0}
+        start_time: {type: string, format: date-time}
+        end_time: {type: string, format: date-time}
+        access: {type: string, enum: [PUBLIC, ASSIGNED]}
+        attempt_limit:
+          oneOf:
+            - type: object
+              additionalProperties: false
+              required: [mode, count]
+              properties:
+                mode: {const: FINITE}
+                count: {type: integer, exclusiveMinimum: 0}
+            - type: object
+              additionalProperties: false
+              required: [mode]
+              properties:
+                mode: {const: UNLIMITED}
+          description: Proposed explicit API representation; never interpret numeric 0 as unlimited implicitly.
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            additionalProperties: false
+            required: [question_version_id, weight]
+            properties:
+              question_version_id: {$ref: '#/components/schemas/Id'}
+              weight: {$ref: '#/components/schemas/ExactPositive'}
+    ExamMetadata:
+      type: object
+      additionalProperties: false
+      required: [id, owner_id, title, access, start_time, end_time, revision]
+      properties:
+        id: {$ref: '#/components/schemas/Id'}
+        owner_id: {$ref: '#/components/schemas/Id'}
+        title: {type: string}
+        access: {type: string, enum: [PUBLIC, ASSIGNED]}
+        start_time: {type: string, format: date-time}
+        end_time: {type: string, format: date-time}
+        revision: {$ref: '#/components/schemas/Revision'}
+    Attempt:
+      type: object
+      additionalProperties: false
+      required: [id, exam_id, attempt_number, status, grading_status, started_at, deadline_at, writable, processing]
+      properties:
+        id: {$ref: '#/components/schemas/Id'}
+        exam_id: {$ref: '#/components/schemas/Id'}
+        attempt_number: {$ref: '#/components/schemas/Revision'}
+        status: {type: string, enum: [IN_PROGRESS, SUBMITTED, EXPIRED]}
+        grading_status: {type: string, enum: [NOT_APPLICABLE, PENDING_GRADING, GRADING, GRADED, GRADING_FAILED]}
+        started_at: {type: string, format: date-time}
+        deadline_at: {type: string, format: date-time}
+        writable: {type: boolean}
+        processing:
+          type: string
+          enum: [OPEN, DRAINING, ADMISSION_UNCERTAIN, COMPLETE]
+          description: Technical projection, not an additional attempt state.
+    StudentQuestion:
+      type: object
+      additionalProperties: false
+      required: [id, kind, prompt, choices, selected_choice_ids, revision]
+      properties:
+        id: {$ref: '#/components/schemas/Id'}
+        kind: {type: string, enum: [SINGLE, MULTIPLE]}
+        prompt: {type: string}
+        choices:
+          type: array
+          items: {$ref: '#/components/schemas/Choice'}
+        selected_choice_ids:
+          type: array
+          uniqueItems: true
+          items: {$ref: '#/components/schemas/Id'}
+        revision: {$ref: '#/components/schemas/Revision'}
+    AnswerRequest:
+      type: object
+      additionalProperties: false
+      required: [request_id, operation, writer_id, client_seq, items]
+      properties:
+        request_id: {type: string, minLength: 1}
+        operation: {type: string, enum: [SAVE, SUBMIT]}
+        writer_id: {$ref: '#/components/schemas/Id'}
+        client_seq: {type: string, pattern: '^[1-9][0-9]*$'}
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [question_snapshot_id, expected_revision, selected_choice_ids]
+            properties:
+              question_snapshot_id: {$ref: '#/components/schemas/Id'}
+              expected_revision: {$ref: '#/components/schemas/Revision'}
+              selected_choice_ids:
+                type: array
+                uniqueItems: true
+                items: {$ref: '#/components/schemas/Id'}
+      description: Server digest covers all fields; duplicate question IDs also rejected; first answer revision=0.
+    ReceiptStatus:
+      type: object
+      additionalProperties: false
+      required: [request_id, status, replay, attempt_finalized]
+      properties:
+        request_id: {type: string}
+        receipt_id: {$ref: '#/components/schemas/Id'}
+        status:
+          type: string
+          enum: [RECEIVED_DURABLY, SAVED, DUPLICATE, STALE, CONFLICT, REJECTED, DEADLINE_EXCEEDED, ADMISSION_UNCERTAIN]
+        original_status: {type: string}
+        replay: {type: boolean}
+        reason_code: {type: string}
+        attempt_finalized: {type: boolean}
+        revisions:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [question_snapshot_id, revision]
+            properties:
+              question_snapshot_id: {$ref: '#/components/schemas/Id'}
+              revision: {$ref: '#/components/schemas/Revision'}
+      description: SAVED only after apply commit. DUPLICATE includes original status. Unknown must never pretend durable success.
+    Score:
+      type: object
+      additionalProperties: false
+      required: [raw, maximum, normalized]
+      properties:
+        raw: {type: string}
+        maximum: {$ref: '#/components/schemas/ExactPositive'}
+        normalized: {type: string, description: 'Exact/rounded decimal per pending approved rounding rule; display two decimals.'}
+    OwnSelection:
+      type: object
+      additionalProperties: false
+      required: [question_snapshot_id, selected_choice_ids]
+      properties:
+        question_snapshot_id: {$ref: '#/components/schemas/Id'}
+        selected_choice_ids:
+          type: array
+          items: {$ref: '#/components/schemas/Id'}
+    PublishedKey:
+      type: object
+      additionalProperties: false
+      required: [question_snapshot_id, correct_choice_ids]
+      properties:
+        question_snapshot_id: {$ref: '#/components/schemas/Id'}
+        correct_choice_ids:
+          type: array
+          items: {$ref: '#/components/schemas/Id'}
+    ResultBase:
+      type: object
+      required: [attempt_id, scores_published, keys_published, own_selections]
+      properties:
+        attempt_id: {$ref: '#/components/schemas/Id'}
+        scores_published: {type: boolean}
+        keys_published: {type: boolean}
+        own_selections:
+          type: array
+          items: {$ref: '#/components/schemas/OwnSelection'}
+    Result:
+      oneOf:
+        - allOf:
+            - {$ref: '#/components/schemas/ResultBase'}
+            - properties:
+                scores_published: {const: false}
+                keys_published: {const: false}
+          unevaluatedProperties: false
+        - allOf:
+            - {$ref: '#/components/schemas/ResultBase'}
+            - required: [score]
+              properties:
+                scores_published: {const: true}
+                keys_published: {const: false}
+                score: {$ref: '#/components/schemas/Score'}
+          unevaluatedProperties: false
+        - allOf:
+            - {$ref: '#/components/schemas/ResultBase'}
+            - required: [keys]
+              properties:
+                scores_published: {const: false}
+                keys_published: {const: true}
+                keys:
+                  type: array
+                  items: {$ref: '#/components/schemas/PublishedKey'}
+          unevaluatedProperties: false
+        - allOf:
+            - {$ref: '#/components/schemas/ResultBase'}
+            - required: [score, keys]
+              properties:
+                scores_published: {const: true}
+                keys_published: {const: true}
+                score: {$ref: '#/components/schemas/Score'}
+                keys:
+                  type: array
+                  items: {$ref: '#/components/schemas/PublishedKey'}
+          unevaluatedProperties: false
+    Error:
+      type: object
+      additionalProperties: false
+      required: [code, correlation_id]
+      properties:
+        code: {type: string}
+        correlation_id: {type: string}
